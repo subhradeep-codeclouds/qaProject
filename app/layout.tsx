@@ -7,8 +7,8 @@ import { Toaster } from 'react-hot-toast'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Subhradeep QA Management',
-  description: 'QA Management Dashboard',
+  title: 'Subhradeep Task Management',
+  description: 'Task Management Dashboard',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

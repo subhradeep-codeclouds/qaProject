@@ -32,7 +32,7 @@ export default function Sidebar() {
           <Bug size={18} className="text-white" />
         </div>
         <div>
-          <h1 className="text-sm font-black text-slate-800 leading-tight">Subhradeep QA</h1>
+          <h1 className="text-xs font-black text-slate-800 leading-tight">Subhradeep Task</h1>
           <p className="text-[10px] text-slate-400 font-medium tracking-wide">Management</p>
         </div>
       </div>
