@@ -5,8 +5,9 @@ export function middleware(request: NextRequest) {
   const session = request.cookies.get('qa_portal_session')
   const isLoginPage = request.nextUrl.pathname === '/login'
   const isApiAuth = request.nextUrl.pathname.startsWith('/api/auth')
+  const isApiNews = request.nextUrl.pathname.startsWith('/api/news')
 
-  if (isApiAuth) return NextResponse.next()
+  if (isApiAuth || isApiNews) return NextResponse.next()
 
   if (!session && !isLoginPage) {
     return NextResponse.redirect(new URL('/login', request.url))
