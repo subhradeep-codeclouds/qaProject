@@ -12,23 +12,23 @@ interface StatsCardProps {
 
 export default function StatsCard({ title, value, subtitle, icon: Icon, gradient, trend }: StatsCardProps) {
   return (
-    <div className="glass-card p-5 hover:border-white/[0.12] transition-all duration-200 group">
+    <div className="card p-5 hover:shadow-md hover:border-violet-200 transition-all duration-200">
       <div className="flex items-start justify-between mb-4">
-        <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br', gradient)}>
+        <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center shadow-md bg-gradient-to-br', gradient)}>
           <Icon size={20} className="text-white" />
         </div>
         {trend && (
           <span className={cn(
             'text-xs font-medium px-2 py-1 rounded-lg',
-            trend.up ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+            trend.up ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
           )}>
             {trend.up ? '↑' : '↓'} {trend.value}
           </span>
         )}
       </div>
-      <p className="text-2xl font-bold text-white mb-1">{value}</p>
-      <p className="text-sm font-medium text-slate-300">{title}</p>
-      {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+      <p className="text-2xl font-bold text-slate-800 mb-1">{value}</p>
+      <p className="text-sm font-semibold text-slate-600">{title}</p>
+      {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
     </div>
   )
 }
