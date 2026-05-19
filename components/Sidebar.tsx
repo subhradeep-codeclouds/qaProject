@@ -10,47 +10,46 @@ import {
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/',             label: 'Dashboard',   icon: LayoutDashboard, color: 'text-violet-400' },
-  { href: '/projects',     label: 'Projects',    icon: FolderKanban,    color: 'text-teal-400' },
-  { href: '/test-cases',   label: 'Test Cases',  icon: ClipboardList,   color: 'text-blue-400' },
-  { href: '/reports',      label: 'Reports',     icon: FileBarChart2,   color: 'text-orange-400' },
-  { href: '/inbox',        label: 'Inbox',       icon: MessageSquare,   color: 'text-pink-400' },
-  { href: '/calendar',     label: 'Calendar',    icon: Calendar,        color: 'text-cyan-400' },
-  { href: '/bugs',         label: 'Bug Tracker', icon: Bug,             color: 'text-red-400' },
-  { href: '/standup',      label: 'Standup',     icon: Zap,             color: 'text-yellow-400' },
+  { href: '/',           label: 'Dashboard',   icon: LayoutDashboard, color: 'text-violet-600' },
+  { href: '/projects',   label: 'Projects',    icon: FolderKanban,    color: 'text-teal-600' },
+  { href: '/test-cases', label: 'Test Cases',  icon: ClipboardList,   color: 'text-blue-600' },
+  { href: '/reports',    label: 'Reports',     icon: FileBarChart2,   color: 'text-orange-600' },
+  { href: '/inbox',      label: 'Inbox',       icon: MessageSquare,   color: 'text-pink-600' },
+  { href: '/calendar',   label: 'Calendar',    icon: Calendar,        color: 'text-cyan-600' },
+  { href: '/bugs',       label: 'Bug Tracker', icon: Bug,             color: 'text-red-600' },
+  { href: '/standup',    label: 'Standup',     icon: Zap,             color: 'text-yellow-600' },
 ]
 
 export default function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col z-40 border-r border-white/[0.06]"
-      style={{ background: 'rgba(8, 8, 24, 0.85)', backdropFilter: 'blur(20px)' }}>
+    <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col z-40 bg-white border-r border-violet-100 shadow-sm shadow-violet-50">
 
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-6 border-b border-white/[0.06]">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-violet-100">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-200">
           <Bug size={18} className="text-white" />
         </div>
         <div>
-          <h1 className="text-sm font-bold text-white tracking-wide">QA Portal</h1>
-          <p className="text-[10px] text-slate-500">Senior QA Dashboard</p>
+          <h1 className="text-sm font-black text-slate-800 leading-tight">Subhradeep QA</h1>
+          <p className="text-[10px] text-slate-400 font-medium tracking-wide">Management</p>
         </div>
       </div>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        <p className="px-3 pb-2 text-[10px] font-semibold text-slate-600 uppercase tracking-widest">
-          Menu
+        <p className="px-3 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          Navigation
         </p>
         {navItems.map(({ href, label, icon: Icon, color }) => {
           const isActive = pathname === href || (href !== '/' && pathname.startsWith(href))
           return (
             <Link key={href} href={href}>
               <div className={cn(isActive ? 'sidebar-link-active' : 'sidebar-link', 'group')}>
-                <Icon size={17} className={cn(isActive ? 'text-violet-400' : color, 'flex-shrink-0')} />
+                <Icon size={17} className={cn(isActive ? 'text-violet-600' : color, 'flex-shrink-0')} />
                 <span className="flex-1">{label}</span>
-                {isActive && <ChevronRight size={14} className="text-violet-400 opacity-70" />}
+                {isActive && <ChevronRight size={13} className="text-violet-400" />}
               </div>
             </Link>
           )
@@ -58,19 +57,19 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom */}
-      <div className="px-3 py-4 border-t border-white/[0.06]">
+      <div className="px-3 py-4 border-t border-violet-100">
         <Link href="/settings">
           <div className="sidebar-link">
-            <Settings size={17} className="text-slate-500" />
+            <Settings size={17} className="text-slate-400" />
             <span>Settings</span>
           </div>
         </Link>
-        <div className="mt-3 px-3 py-3 rounded-xl bg-gradient-to-r from-violet-600/10 to-indigo-600/10 border border-violet-500/20">
+        <div className="mt-3 px-3 py-3 rounded-xl bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs font-medium text-emerald-400">All systems live</span>
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-semibold text-emerald-600">All systems live</span>
           </div>
-          <p className="text-[10px] text-slate-500">Supabase · Vercel connected</p>
+          <p className="text-[10px] text-slate-400">Supabase · Vercel connected</p>
         </div>
       </div>
     </aside>

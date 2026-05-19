@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import Sidebar from '@/components/Sidebar'
+import LayoutWrapper from '@/components/LayoutWrapper'
 import { Toaster } from 'react-hot-toast'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'QA Portal',
-  description: 'Senior QA Engineer Personal Dashboard',
+  title: 'Subhradeep QA Management',
+  description: 'QA Management Dashboard',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -19,20 +19,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           position="top-right"
           toastOptions={{
             style: {
-              background: '#1a1a2e',
-              color: '#e2e8f0',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: '#ffffff',
+              color: '#1e1b4b',
+              border: '1px solid rgba(139,92,246,0.2)',
               borderRadius: '12px',
               fontSize: '13px',
+              boxShadow: '0 8px 30px rgba(139,92,246,0.12)',
             },
           }}
         />
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <main className="flex-1 ml-64 min-h-screen">
-            {children}
-          </main>
-        </div>
+        <LayoutWrapper>{children}</LayoutWrapper>
       </body>
     </html>
   )
