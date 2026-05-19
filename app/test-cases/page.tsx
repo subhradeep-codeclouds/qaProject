@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import { Plus, ClipboardList, Search, Filter, Trash2, Edit2, CheckCircle2 } from 'lucide-react'
@@ -16,7 +16,7 @@ const emptyForm = {
   status: 'pending' as const, priority: 'medium' as const, category: '', project_id: '',
 }
 
-export default function TestCasesPage() {
+function TestCasesContent() {
   const searchParams = useSearchParams()
   const preselectedProject = searchParams.get('project') ?? ''
 
@@ -238,5 +238,13 @@ export default function TestCasesPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function TestCasesPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen"><div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" /></div>}>
+      <TestCasesContent />
+    </Suspense>
   )
 }

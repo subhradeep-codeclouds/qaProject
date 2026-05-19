@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
 import { Plus, FileBarChart2, CheckCircle2, XCircle, AlertTriangle, Clock, Bug, ChevronDown, ChevronUp } from 'lucide-react'
@@ -17,7 +17,7 @@ const emptyForm = {
   blocked: 0, skipped: 0, bugs_found: 0, summary: '', notes: '',
 }
 
-export default function ReportsPage() {
+function ReportsContent() {
   const searchParams = useSearchParams()
   const preProject = searchParams.get('project') ?? ''
 
@@ -272,5 +272,13 @@ export default function ReportsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ReportsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen"><div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" /></div>}>
+      <ReportsContent />
+    </Suspense>
   )
 }
