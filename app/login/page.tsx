@@ -4,12 +4,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Eye, EyeOff, Lock, LogIn, CheckCircle2,
-  Bug, ChevronLeft, ChevronRight,
-  ExternalLink, BookOpen, ChevronDown, ChevronUp,
-  Newspaper, Timer, Sparkles,
+  Bug, Timer, Sparkles,
 } from 'lucide-react'
 import { format } from 'date-fns'
-import type { NewsArticle } from '@/app/api/news/route'
 
 /* ─── Shift ──────────────────────────────────────────────── */
 const SHIFT_START = 11 * 60 + 30
@@ -104,114 +101,132 @@ function AuroraBlobs({ accent }: { accent: string }) {
   )
 }
 
-/* ─── News Carousel ──────────────────────────────────────── */
-function NewsCarousel() {
-  const [articles, setArticles] = useState<NewsArticle[]>([])
-  const [index, setIndex]       = useState(0)
-  const [open, setOpen]         = useState(true)
-  const [loading, setLoading]   = useState(true)
+/* ─── QA Command Center ──────────────────────────────────── */
+const QA_ORBITS = ['🐛','🔍','✅','🧪','📊','⚡','🎯','🚀']
 
-  useEffect(() => {
-    fetch('/api/news').then(r => r.json()).then(d => {
-      if (d.articles?.length) setArticles(d.articles)
-      setLoading(false)
-    }).catch(() => setLoading(false))
-  }, [])
+const QA_STATS = [
+  { emoji:'🐛', value:'2,847',  label:'Bugs Squashed',   col:'text-emerald-300' },
+  { emoji:'✅', value:'99.4%',  label:'Tests Passing',   col:'text-yellow-300'  },
+  { emoji:'🎯', value:'94.7%',  label:'Coverage',        col:'text-sky-300'     },
+  { emoji:'⚡', value:'42 pts', label:'Sprint Velocity', col:'text-pink-300'    },
+]
 
-  const art  = articles[index]
-  const prev = () => setIndex(i => (i - 1 + articles.length) % articles.length)
-  const next = () => setIndex(i => (i + 1) % articles.length)
+const QA_LOGS = [
+  { text:'auth › login flow',      ok:true  },
+  { text:'payments › checkout',    ok:true  },
+  { text:'user › profile update',  ok:true  },
+  { text:'edge-case #441',         ok:false },
+  { text:'api › all endpoints',    ok:true  },
+  { text:'mobile › navigation',    ok:true  },
+  { text:'reports › pdf export',   ok:true  },
+]
 
-  const TAG_COLORS = [
-    'bg-violet-200/40 text-violet-100 border border-violet-300/30',
-    'bg-teal-200/40 text-teal-100 border border-teal-300/30',
-    'bg-pink-200/40 text-pink-100 border border-pink-300/30',
-    'bg-amber-200/40 text-amber-100 border border-amber-300/30',
-  ]
-
+function QACommandCenter({ accent, glow }: { accent: string; glow: string }) {
   return (
-    <div className="flex-1 flex flex-col min-h-0">
-      {/* Header toggle */}
-      <button onClick={() => setOpen(o => !o)}
-        className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all group w-full">
-        <div className="flex items-center gap-2">
-          <Newspaper size={14} className="text-white" />
-          <span className="text-sm font-black text-white tracking-wide">QA & AI Tools News</span>
-          {!loading && articles.length > 0 && (
-            <span className="text-[9px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">
-              {articles.length} live
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[9px] text-white/40 hidden group-hover:block">auto-refreshes hourly</span>
-          {open ? <ChevronUp size={14} className="text-white/60" /> : <ChevronDown size={14} className="text-white/60" />}
-        </div>
-      </button>
+    <div className="flex-1 flex flex-col gap-3 min-h-0">
 
-      {open && (
-        <div className="mt-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 flex flex-col gap-3 flex-1 min-h-0 animate-fade-slide-up">
-          {loading ? (
-            <div className="flex items-center gap-3 py-3">
-              <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin flex-shrink-0" />
-              <p className="text-white/60 text-sm">Fetching latest articles...</p>
+      {/* ── Emoji orbit ring ── */}
+      <div className="flex items-center justify-center py-1 relative flex-shrink-0">
+        {/* Ambient sparkle dots */}
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="absolute w-1.5 h-1.5 rounded-full animate-twinkle pointer-events-none"
+            style={{ background:accent, opacity:0.55, top:`${12+(i*16)%70}%`, left:`${4+(i*19)%88}%`,
+              animationDelay:`${i*0.6}s`, boxShadow:`0 0 6px ${glow}` }} />
+        ))}
+
+        <div className="relative w-[148px] h-[148px]">
+          {/* Static concentric rings */}
+          <div className="absolute inset-0 rounded-full border border-white/10" />
+          <div className="absolute inset-[14px] rounded-full border border-white/15" />
+          <div className="absolute inset-[28px] rounded-full border border-white/20" />
+          {/* Subtle crosshairs */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="absolute w-full h-px bg-white/8" />
+            <div className="absolute w-px h-full bg-white/8" />
+          </div>
+          {/* Rotating conic sweep */}
+          <div className="absolute inset-0 rounded-full"
+            style={{ animation:'rotateSun 5s linear infinite',
+              background:`conic-gradient(from 0deg,transparent 75%,${accent}55 88%,${accent}cc 100%)` }} />
+          {/* Floating emoji orbit */}
+          {QA_ORBITS.map((em, i) => {
+            const rad = ((i / QA_ORBITS.length) * 360 * Math.PI) / 180
+            const r = 58
+            return (
+              <div key={i} className="absolute animate-float select-none"
+                style={{ top:'50%', left:'50%', fontSize:'15px',
+                  transform:`translate(calc(-50% + ${Math.cos(rad)*r}px), calc(-50% + ${Math.sin(rad)*r}px))`,
+                  animationDelay:`${i*0.45}s`, animationDuration:`${4+(i%3)}s` }}>
+                {em}
+              </div>
+            )
+          })}
+          {/* Radar blips */}
+          {[{ t:'22%',l:'62%' },{ t:'68%',l:'28%' },{ t:'38%',l:'76%' }].map((pos,i) => (
+            <div key={i} className="absolute w-2 h-2 rounded-full animate-pulse"
+              style={{ top:pos.t, left:pos.l, background:accent,
+                boxShadow:`0 0 8px ${glow}`, animationDelay:`${i*0.7}s`, animationDuration:'2s' }} />
+          ))}
+          {/* Center badge */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-[52px] h-[52px] rounded-2xl bg-white/15 backdrop-blur-sm border border-white/30
+              flex flex-col items-center justify-center gap-0.5"
+              style={{ boxShadow:`0 0 28px ${glow}` }}>
+              <span className="text-xl leading-none">🧪</span>
+              <span className="text-[7px] text-white/60 font-black tracking-widest">QA LAB</span>
             </div>
-          ) : !art ? (
-            <p className="text-white/50 text-sm text-center py-4">No articles found.</p>
-          ) : (
-            <>
-              {/* Tags */}
-              <div className="flex flex-wrap gap-1.5">
-                {art.tag_list.slice(0,3).map((tag,i) => (
-                  <span key={tag} className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${TAG_COLORS[i%TAG_COLORS.length]}`}>
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-
-              {/* Title */}
-              <p className="text-white font-black text-sm leading-snug line-clamp-2">{art.title}</p>
-
-              {/* Description */}
-              <p className="text-white/55 text-[11px] leading-relaxed line-clamp-3 flex-1">{art.description}</p>
-
-              {/* Meta + Read link */}
-              <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                <div className="flex items-center gap-2 text-[10px] text-white/45">
-                  <BookOpen size={9} />
-                  <span>{art.reading_time_minutes} min</span>
-                  <span>·</span>
-                  <span>{art.readable_publish_date}</span>
-                  <span>·</span>
-                  <span className="font-medium text-white/60">{art.user.name}</span>
-                </div>
-                <a href={art.url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-[10px] font-black text-yellow-300 hover:text-yellow-200 transition-colors bg-yellow-300/10 hover:bg-yellow-300/20 px-2.5 py-1 rounded-lg">
-                  Read <ExternalLink size={8} />
-                </a>
-              </div>
-
-              {/* Carousel nav */}
-              <div className="flex items-center justify-between pt-1">
-                <button onClick={prev}
-                  className="flex items-center gap-1 text-[11px] font-bold text-white/70 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl transition-all active:scale-95">
-                  <ChevronLeft size={12} /> Prev
-                </button>
-                <div className="flex gap-1">
-                  {articles.slice(0, Math.min(articles.length, 8)).map((_, i) => (
-                    <button key={i} onClick={() => setIndex(i)}
-                      className={`w-1.5 h-1.5 rounded-full transition-all ${i === index ? 'bg-white w-4' : 'bg-white/30'}`} />
-                  ))}
-                </div>
-                <button onClick={next}
-                  className="flex items-center gap-1 text-[11px] font-bold text-white/70 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl transition-all active:scale-95">
-                  Next <ChevronRight size={12} />
-                </button>
-              </div>
-            </>
-          )}
+          </div>
         </div>
-      )}
+      </div>
+
+      {/* ── Stats grid ── */}
+      <div className="grid grid-cols-2 gap-2 flex-shrink-0">
+        {QA_STATS.map((s, i) => (
+          <div key={s.label}
+            className="flex flex-col gap-0.5 px-3 py-2.5 rounded-xl bg-white/10 backdrop-blur-md
+              border border-white/15 animate-fade-slide-up"
+            style={{ animationDelay:`${0.3+i*0.08}s`, animationFillMode:'forwards' }}>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">{s.emoji}</span>
+              <span className={`text-base font-black leading-none ${s.col}`}>{s.value}</span>
+            </div>
+            <span className="text-[8px] text-white/45 uppercase tracking-wider font-semibold">{s.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Terminal log ── */}
+      <div className="flex-1 min-h-0 bg-black/30 backdrop-blur-md border border-white/10 rounded-2xl p-3
+        font-mono overflow-hidden flex flex-col">
+        <div className="flex items-center gap-1.5 mb-2.5 flex-shrink-0">
+          <div className="w-2 h-2 rounded-full bg-red-400/80" />
+          <div className="w-2 h-2 rounded-full bg-yellow-400/80" />
+          <div className="w-2 h-2 rounded-full bg-green-400/80" />
+          <span className="text-[8px] text-white/20 ml-2 tracking-wider font-bold">qa-runner v2.4.1</span>
+        </div>
+        <div className="flex-1 min-h-0 overflow-hidden space-y-1.5">
+          {QA_LOGS.map((log, i) => (
+            <div key={i} className="text-[9px] flex items-center gap-1.5 animate-fade-slide-up"
+              style={{ animationDelay:`${0.5+i*0.13}s`, animationFillMode:'forwards', opacity:0 }}>
+              <span style={{ color:log.ok ? '#4ade80' : '#fbbf24' }}>{log.ok ? '✓' : '⚠'}</span>
+              <span className="flex-1"
+                style={{ color:log.ok ? 'rgba(134,239,172,0.75)' : 'rgba(251,191,36,0.75)' }}>
+                {log.text}
+              </span>
+              <span className="text-[7px] px-1.5 py-0.5 rounded-md font-bold"
+                style={{ background:log.ok ? 'rgba(74,222,128,0.15)' : 'rgba(251,191,36,0.15)',
+                  color:log.ok ? '#4ade80' : '#fbbf24' }}>
+                {log.ok ? 'PASS' : 'WARN'}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5 mt-2 flex-shrink-0 border-t border-white/10 pt-2">
+          <span className="text-[9px] text-white/25">$</span>
+          <span className="text-[9px] text-white/25">running test suite</span>
+          <div className="w-1.5 h-3.5 bg-white/50 animate-pulse ml-0.5 rounded-sm" />
+        </div>
+      </div>
     </div>
   )
 }
@@ -378,9 +393,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* ── News Carousel ── */}
+          {/* ── QA Command Center ── */}
           <div className="animate-fade-slide-up delay-300 flex-1 min-h-0 flex flex-col" style={{ animationFillMode:'forwards' }}>
-            <NewsCarousel />
+            <QACommandCenter accent={theme.accent} glow={theme.glow} />
           </div>
         </div>
       </div>
