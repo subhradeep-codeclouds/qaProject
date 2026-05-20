@@ -101,132 +101,67 @@ function AuroraBlobs({ accent }: { accent: string }) {
   )
 }
 
-/* ─── QA Command Center ──────────────────────────────────── */
-const QA_ORBITS = ['🐛','🔍','✅','🧪','📊','⚡','🎯','🚀']
-
-const QA_STATS = [
-  { emoji:'🐛', value:'2,847',  label:'Bugs Squashed',   col:'text-emerald-300' },
-  { emoji:'✅', value:'99.4%',  label:'Tests Passing',   col:'text-yellow-300'  },
-  { emoji:'🎯', value:'94.7%',  label:'Coverage',        col:'text-sky-300'     },
-  { emoji:'⚡', value:'42 pts', label:'Sprint Velocity', col:'text-pink-300'    },
+/* ─── Warm Welcome ───────────────────────────────────────── */
+const WELCOME_QUOTES = [
+  { text: "Quality is never an accident — it's always the result of intelligent effort.", author: "John Ruskin" },
+  { text: "Testing leads to failure, and failure leads to understanding.", author: "Burt Rutan" },
+  { text: "Make it work, make it right, make it fast.", author: "Kent Beck" },
+  { text: "The bitterness of poor quality remains long after the sweetness of meeting the schedule.", author: "Karl Wiegers" },
 ]
 
-const QA_LOGS = [
-  { text:'auth › login flow',      ok:true  },
-  { text:'payments › checkout',    ok:true  },
-  { text:'user › profile update',  ok:true  },
-  { text:'edge-case #441',         ok:false },
-  { text:'api › all endpoints',    ok:true  },
-  { text:'mobile › navigation',    ok:true  },
-  { text:'reports › pdf export',   ok:true  },
-]
+function WarmWelcome({ accent, glow }: { accent: string; glow: string }) {
+  const [qIdx, setQIdx] = useState(0)
 
-function QACommandCenter({ accent, glow }: { accent: string; glow: string }) {
+  useEffect(() => {
+    const t = setInterval(() => setQIdx(i => (i + 1) % WELCOME_QUOTES.length), 6000)
+    return () => clearInterval(t)
+  }, [])
+
+  const q = WELCOME_QUOTES[qIdx]
+
   return (
-    <div className="flex-1 flex flex-col gap-3 min-h-0">
+    <div className="flex-1 flex flex-col items-center justify-center gap-6 px-2 text-center">
 
-      {/* ── Emoji orbit ring ── */}
-      <div className="flex items-center justify-center py-1 relative flex-shrink-0">
-        {/* Ambient sparkle dots */}
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="absolute w-1.5 h-1.5 rounded-full animate-twinkle pointer-events-none"
-            style={{ background:accent, opacity:0.55, top:`${12+(i*16)%70}%`, left:`${4+(i*19)%88}%`,
-              animationDelay:`${i*0.6}s`, boxShadow:`0 0 6px ${glow}` }} />
-        ))}
-
-        <div className="relative w-[148px] h-[148px]">
-          {/* Static concentric rings */}
-          <div className="absolute inset-0 rounded-full border border-white/10" />
-          <div className="absolute inset-[14px] rounded-full border border-white/15" />
-          <div className="absolute inset-[28px] rounded-full border border-white/20" />
-          {/* Subtle crosshairs */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="absolute w-full h-px bg-white/8" />
-            <div className="absolute w-px h-full bg-white/8" />
-          </div>
-          {/* Rotating conic sweep */}
-          <div className="absolute inset-0 rounded-full"
-            style={{ animation:'rotateSun 5s linear infinite',
-              background:`conic-gradient(from 0deg,transparent 75%,${accent}55 88%,${accent}cc 100%)` }} />
-          {/* Floating emoji orbit */}
-          {QA_ORBITS.map((em, i) => {
-            const rad = ((i / QA_ORBITS.length) * 360 * Math.PI) / 180
-            const r = 58
-            return (
-              <div key={i} className="absolute animate-float select-none"
-                style={{ top:'50%', left:'50%', fontSize:'15px',
-                  transform:`translate(calc(-50% + ${Math.cos(rad)*r}px), calc(-50% + ${Math.sin(rad)*r}px))`,
-                  animationDelay:`${i*0.45}s`, animationDuration:`${4+(i%3)}s` }}>
-                {em}
-              </div>
-            )
-          })}
-          {/* Radar blips */}
-          {[{ t:'22%',l:'62%' },{ t:'68%',l:'28%' },{ t:'38%',l:'76%' }].map((pos,i) => (
-            <div key={i} className="absolute w-2 h-2 rounded-full animate-pulse"
-              style={{ top:pos.t, left:pos.l, background:accent,
-                boxShadow:`0 0 8px ${glow}`, animationDelay:`${i*0.7}s`, animationDuration:'2s' }} />
-          ))}
-          {/* Center badge */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-[52px] h-[52px] rounded-2xl bg-white/15 backdrop-blur-sm border border-white/30
-              flex flex-col items-center justify-center gap-0.5"
-              style={{ boxShadow:`0 0 28px ${glow}` }}>
-              <span className="text-xl leading-none">🧪</span>
-              <span className="text-[7px] text-white/60 font-black tracking-widest">QA LAB</span>
-            </div>
-          </div>
-        </div>
+      {/* Wave emoji */}
+      <div className="animate-float" style={{ display:'inline-block', filter:`drop-shadow(0 0 20px ${glow})` }}>
+        <span className="text-6xl">👋</span>
       </div>
 
-      {/* ── Stats grid ── */}
-      <div className="grid grid-cols-2 gap-2 flex-shrink-0">
-        {QA_STATS.map((s, i) => (
-          <div key={s.label}
-            className="flex flex-col gap-0.5 px-3 py-2.5 rounded-xl bg-white/10 backdrop-blur-md
-              border border-white/15 animate-fade-slide-up"
-            style={{ animationDelay:`${0.3+i*0.08}s`, animationFillMode:'forwards' }}>
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm">{s.emoji}</span>
-              <span className={`text-base font-black leading-none ${s.col}`}>{s.value}</span>
-            </div>
-            <span className="text-[8px] text-white/45 uppercase tracking-wider font-semibold">{s.label}</span>
-          </div>
+      {/* Welcome heading */}
+      <div className="space-y-2 animate-fade-slide-up delay-100" style={{ animationFillMode:'forwards' }}>
+        <h2 className="text-3xl font-black text-white leading-tight"
+          style={{ textShadow:`0 0 32px ${glow}` }}>
+          Welcome back,
+        </h2>
+        <p className="text-3xl font-black animate-shimmer-text bg-clip-text text-transparent leading-tight"
+          style={{ backgroundImage:'linear-gradient(90deg,#fff,rgba(255,255,255,0.55),#fff)', backgroundSize:'200% auto' }}>
+          Subhradeep!
+        </p>
+        <p className="text-white/55 text-sm pt-1">
+          Your QA workspace is ready and waiting ✨
+        </p>
+      </div>
+
+      {/* Pulsing dot divider */}
+      <div className="flex items-center gap-3 animate-fade-slide-up delay-200" style={{ animationFillMode:'forwards' }}>
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="w-2 h-2 rounded-full animate-pulse"
+            style={{ background:accent, animationDelay:`${i*0.35}s`, boxShadow:`0 0 8px ${glow}` }} />
         ))}
       </div>
 
-      {/* ── Terminal log ── */}
-      <div className="flex-1 min-h-0 bg-black/30 backdrop-blur-md border border-white/10 rounded-2xl p-3
-        font-mono overflow-hidden flex flex-col">
-        <div className="flex items-center gap-1.5 mb-2.5 flex-shrink-0">
-          <div className="w-2 h-2 rounded-full bg-red-400/80" />
-          <div className="w-2 h-2 rounded-full bg-yellow-400/80" />
-          <div className="w-2 h-2 rounded-full bg-green-400/80" />
-          <span className="text-[8px] text-white/20 ml-2 tracking-wider font-bold">qa-runner v2.4.1</span>
-        </div>
-        <div className="flex-1 min-h-0 overflow-hidden space-y-1.5">
-          {QA_LOGS.map((log, i) => (
-            <div key={i} className="text-[9px] flex items-center gap-1.5 animate-fade-slide-up"
-              style={{ animationDelay:`${0.5+i*0.13}s`, animationFillMode:'forwards', opacity:0 }}>
-              <span style={{ color:log.ok ? '#4ade80' : '#fbbf24' }}>{log.ok ? '✓' : '⚠'}</span>
-              <span className="flex-1"
-                style={{ color:log.ok ? 'rgba(134,239,172,0.75)' : 'rgba(251,191,36,0.75)' }}>
-                {log.text}
-              </span>
-              <span className="text-[7px] px-1.5 py-0.5 rounded-md font-bold"
-                style={{ background:log.ok ? 'rgba(74,222,128,0.15)' : 'rgba(251,191,36,0.15)',
-                  color:log.ok ? '#4ade80' : '#fbbf24' }}>
-                {log.ok ? 'PASS' : 'WARN'}
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center gap-1.5 mt-2 flex-shrink-0 border-t border-white/10 pt-2">
-          <span className="text-[9px] text-white/25">$</span>
-          <span className="text-[9px] text-white/25">running test suite</span>
-          <div className="w-1.5 h-3.5 bg-white/50 animate-pulse ml-0.5 rounded-sm" />
-        </div>
+      {/* Rotating quote card */}
+      <div className="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5
+        animate-fade-slide-up delay-300" style={{ animationFillMode:'forwards' }}>
+        <span className="text-2xl block mb-3">💬</span>
+        <p className="text-white/80 text-[13px] italic leading-relaxed">
+          &ldquo;{q.text}&rdquo;
+        </p>
+        <p className="text-white/40 text-[11px] mt-3 font-semibold tracking-wide">
+          — {q.author}
+        </p>
       </div>
+
     </div>
   )
 }
@@ -393,9 +328,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* ── QA Command Center ── */}
+          {/* ── Warm Welcome ── */}
           <div className="animate-fade-slide-up delay-300 flex-1 min-h-0 flex flex-col" style={{ animationFillMode:'forwards' }}>
-            <QACommandCenter accent={theme.accent} glow={theme.glow} />
+            <WarmWelcome accent={theme.accent} glow={theme.glow} />
           </div>
         </div>
       </div>
