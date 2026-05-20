@@ -25,11 +25,11 @@ export default function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col z-40
-      bg-white border-r border-orange-100 shadow-sm shadow-orange-50
-      dark:bg-slate-900 dark:border-slate-800 dark:shadow-none">
+      bg-white border-r border-orange-100 shadow-sm shadow-orange-100/50
+      dark:bg-[#0c2040] dark:border-[#1a3355] dark:shadow-none">
 
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-orange-100 dark:border-slate-800">
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-orange-100 dark:border-[#1a3355]">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-blue-600
           flex items-center justify-center shadow-lg shadow-orange-200 dark:shadow-orange-900/30">
           <Bug size={18} className="text-white" />
@@ -46,7 +46,7 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        <p className="px-3 pb-2 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
+        <p className="px-3 pb-2 text-[10px] font-bold text-slate-400 dark:text-[#3a6090] uppercase tracking-widest">
           Navigation
         </p>
         {navItems.map(({ href, label, icon: Icon, color }) => {
@@ -67,23 +67,23 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom */}
-      <div className="px-3 py-4 border-t border-orange-100 dark:border-slate-800">
+      <div className="px-3 py-4 border-t border-orange-100 dark:border-[#1a3355]">
         <Link href="/settings">
           <div className="sidebar-link">
-            <Settings size={17} className="text-slate-400" />
+            <Settings size={17} className="text-slate-400 dark:text-slate-500" />
             <span>Settings</span>
           </div>
         </Link>
         <div className="mt-3 px-3 py-3 rounded-xl
           bg-gradient-to-r from-orange-50 to-blue-50 border border-orange-200
-          dark:from-orange-950/30 dark:to-blue-950/30 dark:border-slate-700">
+          dark:from-[#1a3355] dark:to-[#122240] dark:border-[#1e3d68]">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               All systems live
             </span>
           </div>
-          <p className="text-[10px] text-slate-400 dark:text-slate-500">
+          <p className="text-[10px] text-slate-400 dark:text-[#4a7aaa]">
             Supabase · Vercel connected
           </p>
         </div>

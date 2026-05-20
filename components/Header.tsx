@@ -20,8 +20,8 @@ export default function Header({ title }: { title: string }) {
 
   return (
     <header className="h-16 flex items-center justify-between px-6 sticky top-0 z-30
-      bg-white/90 backdrop-blur-xl border-b border-orange-100 shadow-sm shadow-orange-50/50
-      dark:bg-slate-900/90 dark:border-slate-800 dark:shadow-none">
+      bg-white/90 backdrop-blur-xl border-b border-orange-100 shadow-sm shadow-orange-100/40
+      dark:bg-[#0c2040]/95 dark:border-[#1a3355] dark:shadow-none">
 
       <div>
         <h2 className="text-lg font-black text-slate-800 dark:text-slate-100">{title}</h2>
@@ -39,7 +39,7 @@ export default function Header({ title }: { title: string }) {
             className="pl-9 pr-4 py-2 text-xs rounded-xl w-52 transition-all
               bg-orange-50 border border-orange-100 text-slate-600 placeholder:text-slate-400
               focus:outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100
-              dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:placeholder:text-slate-500
+              dark:bg-[#122240] dark:border-[#1a3355] dark:text-slate-300 dark:placeholder:text-[#3a6090]
               dark:focus:border-orange-500 dark:focus:ring-orange-500/20"
           />
         </div>
@@ -65,7 +65,7 @@ export default function Header({ title }: { title: string }) {
         {/* Notifications */}
         <button className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors
           bg-orange-50 border border-orange-100 hover:bg-orange-100
-          dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700">
+          dark:bg-[#122240] dark:border-[#1a3355] dark:hover:bg-[#1a3355]">
           <Bell size={15} className="text-orange-500 dark:text-orange-400" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-500" />
         </button>
@@ -86,8 +86,8 @@ export default function Header({ title }: { title: string }) {
               <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
               <div className="absolute right-0 top-11 z-20 w-44 rounded-2xl border shadow-xl p-1.5
                 bg-white border-orange-100 shadow-orange-100
-                dark:bg-slate-800 dark:border-slate-700 dark:shadow-slate-900">
-                <div className="px-3 py-2 border-b mb-1 border-orange-50 dark:border-slate-700">
+                dark:bg-[#0c2040] dark:border-[#1a3355] dark:shadow-[#071b3c]">
+                <div className="px-3 py-2 border-b mb-1 border-orange-50 dark:border-[#1a3355]">
                   <p className="text-xs font-bold text-slate-700 dark:text-slate-200">Subhradeep</p>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500">QA Management Portal</p>
                 </div>

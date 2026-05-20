@@ -75,10 +75,10 @@ function StatCard({ label, value, icon, from, to, loading }: StatProps) {
         {icon}
       </div>
       <div>
-        <p className="text-2xl font-bold text-slate-800">
-          {loading ? <span className="inline-block w-8 h-6 bg-slate-100 rounded animate-pulse" /> : value}
+        <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+          {loading ? <span className="inline-block w-8 h-6 bg-slate-100 dark:bg-[#1a3355] rounded animate-pulse" /> : value}
         </p>
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mt-0.5">{label}</p>
+        <p className="text-xs font-semibold text-slate-400 dark:text-[#4a7aaa] uppercase tracking-wide mt-0.5">{label}</p>
       </div>
     </div>
   )
@@ -195,7 +195,7 @@ export default function Dashboard() {
   const visibleNews = newsExpanded ? news : news.slice(0, 3)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 dark:from-[#071b3c] dark:via-[#0c2040] dark:to-[#071b3c]">
       <Header title="Dashboard" />
 
       <div className="p-6 space-y-6 max-w-[1400px]">
@@ -326,7 +326,7 @@ export default function Dashboard() {
                   <Link key={r.id} href="/reports">
                     <div className="card-hover p-3 group">
                       <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{r.title}</p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{r.title}</p>
                         <span className="text-[10px] text-slate-400 shrink-0">{formatDate(r.test_date)}</span>
                       </div>
                       <p className="text-[11px] text-slate-400 mb-2">{r.project_name}</p>
@@ -365,7 +365,7 @@ export default function Dashboard() {
                     <div className={cn('w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center shadow-sm', color)}>
                       <Icon size={15} className="text-white" />
                     </div>
-                    <span className="text-sm font-medium text-slate-700 group-hover:text-orange-700 dark:group-hover:text-orange-400 transition-colors">{label}</span>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 group-hover:text-orange-700 dark:group-hover:text-orange-400 transition-colors">{label}</span>
                     <ChevronRight size={14} className="ml-auto text-slate-300 group-hover:text-orange-400 transition-colors" />
                   </div>
                 </Link>
