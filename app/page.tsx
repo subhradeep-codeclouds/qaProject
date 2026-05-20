@@ -111,7 +111,7 @@ function ProjectMiniCard({ project }: { project: Project }) {
           {project.description ?? 'No description.'}
         </p>
         <div className="flex items-center justify-end mt-3">
-          <ExternalLink size={11} className="text-slate-300 group-hover:text-violet-500 transition-colors" />
+          <ExternalLink size={11} className="text-slate-300 group-hover:text-orange-500 transition-colors" />
         </div>
       </div>
     </Link>
@@ -130,12 +130,12 @@ function NewsCard({ article }: { article: NewsArticle }) {
       )}
       <div className="flex flex-wrap gap-1">
         {article.tag_list.slice(0, 2).map(t => (
-          <span key={t} className="badge bg-violet-50 text-violet-600 border-violet-100 text-[9px]">
+          <span key={t} className="badge bg-orange-50 text-orange-600 border-orange-100 text-[9px] dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-900/50">
             <Tag size={8} className="mr-0.5" />{t}
           </span>
         ))}
       </div>
-      <p className="text-sm font-semibold text-slate-800 line-clamp-2 leading-snug group-hover:text-violet-700 transition-colors">
+      <p className="text-sm font-semibold text-slate-800 line-clamp-2 leading-snug group-hover:text-orange-700 dark:group-hover:text-orange-400 transition-colors">
         {article.title}
       </p>
       <div className="flex items-center justify-between mt-auto">
@@ -195,19 +195,20 @@ export default function Dashboard() {
   const visibleNews = newsExpanded ? news : news.slice(0, 3)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       <Header title="Dashboard" />
 
       <div className="p-6 space-y-6 max-w-[1400px]">
 
         {/* ── Welcome Banner ── */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-700 p-6 shadow-xl shadow-violet-200">
+        <div className="relative overflow-hidden rounded-2xl p-6 shadow-xl shadow-orange-200/50 dark:shadow-orange-900/20"
+          style={{ background: 'linear-gradient(135deg,#f97316 0%,#3b82f6 55%,#ea580c 100%)' }}>
           {/* decorative blobs */}
           <div className="absolute top-0 right-0 w-72 h-full opacity-20 pointer-events-none">
-            <div className="absolute top-4 right-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
-            <div className="absolute bottom-2 right-24 w-20 h-20 rounded-full bg-pink-300/40 blur-xl" />
+            <div className="absolute top-4 right-8 w-32 h-32 rounded-full bg-white/40 blur-2xl" />
+            <div className="absolute bottom-2 right-24 w-20 h-20 rounded-full bg-blue-300/50 blur-xl" />
           </div>
-          <div className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full bg-violet-400/20 blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full bg-orange-400/20 blur-2xl pointer-events-none" />
 
           <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -215,29 +216,29 @@ export default function Dashboard() {
                 <span className="text-2xl">{greeting.emoji}</span>
                 <h2 className="text-xl font-bold text-white">{greeting.label}, Subhradeep!</h2>
               </div>
-              <p className="text-violet-200 text-sm">
+              <p className="text-orange-100 text-sm">
                 {format(new Date(), 'EEEE, MMMM do yyyy')} &mdash; here&apos;s your daily overview
               </p>
 
               {/* shift progress */}
               {shiftText && (
                 <div className="mt-3 flex items-center gap-3">
-                  <Clock size={13} className="text-violet-300 shrink-0" />
-                  <span className="text-xs text-violet-200">{shiftText}</span>
+                  <Clock size={13} className="text-orange-200 shrink-0" />
+                  <span className="text-xs text-orange-100">{shiftText}</span>
                   <div className="flex-1 max-w-[120px] h-1.5 bg-white/20 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-pink-400 to-rose-300 rounded-full transition-all duration-1000"
+                      className="h-full bg-gradient-to-r from-white/80 to-blue-200 rounded-full transition-all duration-1000"
                       style={{ width: `${shiftPct}%` }}
                     />
                   </div>
-                  <span className="text-[10px] text-violet-300">{shiftPct}%</span>
+                  <span className="text-[10px] text-orange-200">{shiftPct}%</span>
                 </div>
               )}
             </div>
 
             <div className="flex gap-2 shrink-0">
               <Link href="/reports">
-                <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white text-violet-700 font-semibold text-sm shadow hover:bg-violet-50 transition-all">
+                <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white text-orange-600 font-semibold text-sm shadow hover:bg-orange-50 transition-all">
                   <Plus size={15} /> Add Report
                 </button>
               </Link>
@@ -253,7 +254,7 @@ export default function Dashboard() {
         {/* ── Stats Row ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Projects" value={projects.length} loading={loading}
-            from="from-violet-500" to="to-purple-600"
+            from="from-orange-500" to="to-amber-600"
             icon={<FolderKanban size={20} />} />
           <StatCard label="Test Cases" value={testCaseCount} loading={loading}
             from="from-teal-400" to="to-cyan-600"
@@ -273,7 +274,7 @@ export default function Dashboard() {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="section-title">Recent Projects</h3>
-              <Link href="/projects" className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-800 transition-colors">
+              <Link href="/projects" className="flex items-center gap-1 text-xs font-semibold text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 transition-colors">
                 View all <ArrowRight size={13} />
               </Link>
             </div>
@@ -286,7 +287,7 @@ export default function Dashboard() {
               </div>
             ) : projects.length === 0 ? (
               <div className="card p-12 text-center">
-                <FolderKanban size={36} className="text-violet-200 mx-auto mb-3" />
+                <FolderKanban size={36} className="text-orange-200 mx-auto mb-3" />
                 <p className="text-slate-400 text-sm mb-4">No projects yet.</p>
                 <Link href="/projects">
                   <button className="btn-primary mx-auto">
@@ -307,7 +308,7 @@ export default function Dashboard() {
             {/* Recent Reports */}
             <div className="flex items-center justify-between">
               <h3 className="section-title text-base">Recent Reports</h3>
-              <Link href="/reports" className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-800 transition-colors">
+              <Link href="/reports" className="flex items-center gap-1 text-xs font-semibold text-orange-600 hover:text-orange-800 dark:text-orange-400 dark:hover:text-orange-300 transition-colors">
                 All <ArrowRight size={13} />
               </Link>
             </div>
@@ -317,7 +318,7 @@ export default function Dashboard() {
                 [...Array(3)].map((_, i) => <div key={i} className="card h-20 animate-pulse bg-slate-50" />)
               ) : recentReports.length === 0 ? (
                 <div className="card p-8 text-center">
-                  <FileBarChart2 size={28} className="text-violet-200 mx-auto mb-2" />
+                  <FileBarChart2 size={28} className="text-orange-200 mx-auto mb-2" />
                   <p className="text-slate-400 text-xs">No reports yet.</p>
                 </div>
               ) : (
@@ -356,7 +357,7 @@ export default function Dashboard() {
               {[
                 { href: '/calendar',   label: 'View Calendar',  icon: Calendar,      color: 'from-cyan-400 to-blue-500' },
                 { href: '/inbox',      label: 'Check Inbox',    icon: MessageSquare, color: 'from-pink-400 to-rose-500' },
-                { href: '/test-cases', label: 'Test Cases',     icon: ClipboardList, color: 'from-violet-500 to-indigo-600' },
+                { href: '/test-cases', label: 'Test Cases',     icon: ClipboardList, color: 'from-blue-500 to-indigo-600' },
                 { href: '/bugs',       label: 'Bug Tracker',    icon: Bug,           color: 'from-orange-400 to-red-500' },
               ].map(({ href, label, icon: Icon, color }) => (
                 <Link key={href} href={href}>
@@ -364,8 +365,8 @@ export default function Dashboard() {
                     <div className={cn('w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center shadow-sm', color)}>
                       <Icon size={15} className="text-white" />
                     </div>
-                    <span className="text-sm font-medium text-slate-700 group-hover:text-violet-700 transition-colors">{label}</span>
-                    <ChevronRight size={14} className="ml-auto text-slate-300 group-hover:text-violet-400 transition-colors" />
+                    <span className="text-sm font-medium text-slate-700 group-hover:text-orange-700 dark:group-hover:text-orange-400 transition-colors">{label}</span>
+                    <ChevronRight size={14} className="ml-auto text-slate-300 group-hover:text-orange-400 transition-colors" />
                   </div>
                 </Link>
               ))}
@@ -377,7 +378,7 @@ export default function Dashboard() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center shadow-md">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-blue-600 flex items-center justify-center shadow-md shadow-orange-200 dark:shadow-orange-900/30">
                 <Newspaper size={15} className="text-white" />
               </div>
               <div>
