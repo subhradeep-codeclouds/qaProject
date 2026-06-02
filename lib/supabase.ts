@@ -65,3 +65,32 @@ export type StandupNote = {
   plan_tomorrow: string | null
   created_at: string
 }
+
+export type ProjectCredential = {
+  id: string
+  project_id: string
+  title: string
+  username: string | null
+  password: string | null
+  url: string | null
+  notes: string | null
+  created_at: string
+}
+
+export type ProjectUrl = {
+  id: string
+  project_id: string
+  label: string
+  url: string
+  env: 'dev' | 'staging' | 'production' | 'qa' | 'custom'
+  created_at: string
+}
+
+export type ProjectSheet = {
+  id: string
+  project_id: string
+  title: string
+  url: string
+  type: 'test_cases' | 'rtm' | 'regression' | 'smoke' | 'other'
+  created_at: string
+}

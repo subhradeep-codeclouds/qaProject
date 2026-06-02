@@ -94,10 +94,69 @@ CREATE TRIGGER projects_updated_at
 CREATE TRIGGER test_cases_updated_at
   BEFORE UPDATE ON test_cases FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
--- Row Level Security (enable after setting up auth)
--- ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE project_resources ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE test_cases ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE test_reports ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE bugs ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE standup_notes ENABLE ROW LEVEL SECURITY;
+-- ===========================
+-- MIGRATION: Enhanced Project Sections
+-- Run these additions after the base schema above
+-- ===========================
+
+-- Dedicated credentials per project
+CREATE TABLE IF NOT EXISTS project_credentials (
+  id           UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  project_id   UUID REFERENCES projects(id) ON DELETE CASCADE,
+  title        TEXT NOT NULL,
+  username     TEXT,
+  password     TEXT,
+  url          TEXT,
+  notes        TEXT,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Environment URLs per project
+CREATE TABLE IF NOT EXISTS project_urls (
+  id           UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  project_id   UUID REFERENCES projects(id) ON DELETE CASCADE,
+  label        TEXT NOT NULL DEFAULT 'App URL',
+  url          TEXT NOT NULL,
+  env          TEXT DEFAULT 'dev'
+               CHECK (env IN ('dev', 'staging', 'production', 'qa', 'custom')),
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Google Sheets / RTM / test doc links per project
+CREATE TABLE IF NOT EXISTS project_sheets (
+  id           UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  project_id   UUID REFERENCES projects(id) ON DELETE CASCADE,
+  title        TEXT NOT NULL,
+  url          TEXT NOT NULL,
+  type         TEXT DEFAULT 'test_cases'
+               CHECK (type IN ('test_cases', 'rtm', 'regression', 'smoke', 'other')),
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ===========================
+-- Row Level Security
+-- Enable RLS on all tables so only authenticated sessions can access data.
+-- These "allow all" policies preserve current behavior (single-user portal
+-- with custom session auth). For multi-user setups, replace with user-scoped
+-- policies using auth.uid().
+-- ===========================
+
+ALTER TABLE projects            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_resources   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_credentials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_urls        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_sheets      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE test_cases          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE test_reports        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bugs                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE standup_notes       ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "portal_all" ON projects            FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "portal_all" ON project_resources   FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "portal_all" ON project_credentials FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "portal_all" ON project_urls        FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "portal_all" ON project_sheets      FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "portal_all" ON test_cases          FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "portal_all" ON test_reports        FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "portal_all" ON bugs                FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "portal_all" ON standup_notes       FOR ALL USING (true) WITH CHECK (true);
