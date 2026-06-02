@@ -144,7 +144,7 @@ export default function ProjectDetailPage() {
     }
     const { error } = await supabase.from('project_credentials').insert([payload])
     setSaving(false)
-    if (error) return toast.error('Failed to save credential')
+    if (error) return toast.error(error.message || 'Failed to save credential')
     toast.success('Credential saved!')
     closeCredModal()
     fetchData()
@@ -166,7 +166,7 @@ export default function ProjectDetailPage() {
       project_id: id, label: urlForm.label.trim(), url: safeUrl, env: urlForm.env,
     }])
     setSaving(false)
-    if (error) return toast.error('Failed to save URL')
+    if (error) return toast.error(error.message || 'Failed to save URL')
     toast.success('URL saved!')
     closeUrlModal()
     fetchData()
@@ -188,7 +188,7 @@ export default function ProjectDetailPage() {
       project_id: id, title: sheetForm.title.trim(), url: safeUrl, type: sheetForm.type,
     }])
     setSaving(false)
-    if (error) return toast.error('Failed to save sheet link')
+    if (error) return toast.error(error.message || 'Failed to save sheet link')
     toast.success('Sheet link saved!')
     closeSheetModal()
     fetchData()
@@ -290,78 +290,93 @@ export default function ProjectDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {credentials.map(cred => {
                 const isVisible = visibleCreds.has(cred.id)
+                const safeCredUrl = sanitizeUrl(cred.url)
                 return (
-                  <div key={cred.id} className="card p-4 group">
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-                        <Lock size={14} className="text-orange-500" />
+                  <div key={cred.id} className="card p-4">
+                    {/* Card header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                          <Lock size={13} className="text-orange-500" />
+                        </div>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{cred.title}</p>
                       </div>
-                      <div className="flex-1 min-w-0 space-y-1.5">
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{cred.title}</p>
-
-                        {cred.username && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 w-8">user</span>
-                            <span className="text-xs font-mono text-slate-600 dark:text-slate-300 truncate flex-1">{cred.username}</span>
-                            <button
-                              onClick={() => copyText(cred.username!, `u-${cred.id}`)}
-                              className="p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors flex-shrink-0"
-                              title="Copy username"
-                            >
-                              {copied === `u-${cred.id}` ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} className="text-slate-400" />}
-                            </button>
-                          </div>
-                        )}
-
-                        {cred.password !== null && cred.password !== '' && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 w-8">pass</span>
-                            <span className="text-xs font-mono text-slate-600 dark:text-slate-300 flex-1 truncate select-none">
-                              {isVisible ? cred.password : '●●●●●●●●'}
-                            </span>
-                            {isVisible && (
-                              <button
-                                onClick={() => copyText(cred.password!, `p-${cred.id}`)}
-                                className="p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors flex-shrink-0"
-                                title="Copy password"
-                              >
-                                {copied === `p-${cred.id}` ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} className="text-slate-400" />}
-                              </button>
-                            )}
-                            <button
-                              onClick={() => toggleCredVisible(cred.id)}
-                              className="p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors flex-shrink-0"
-                              title={isVisible ? 'Hide password' : 'Show password'}
-                            >
-                              {isVisible ? <EyeOff size={11} className="text-orange-400" /> : <Eye size={11} className="text-slate-400" />}
-                            </button>
-                          </div>
-                        )}
-
-                        {cred.url && sanitizeUrl(cred.url) && (
-                          <a
-                            href={sanitizeUrl(cred.url)!}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-xs text-orange-500 hover:text-orange-400 transition-colors truncate"
-                          >
-                            <ExternalLink size={10} />
-                            <span className="truncate">{cred.url}</span>
-                          </a>
-                        )}
-
-                        {cred.notes && (
-                          <p className="text-xs text-slate-400 dark:text-slate-500 line-clamp-2">{cred.notes}</p>
-                        )}
-                      </div>
-
                       <button
                         onClick={() => deleteCredential(cred.id)}
-                        className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-950/40 transition-all"
+                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors flex-shrink-0 ml-2"
                         title="Delete credential"
                       >
                         <Trash2 size={13} className="text-red-400" />
                       </button>
+                    </div>
+
+                    {/* Rows */}
+                    <div className="space-y-2">
+                      {cred.username && (
+                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#0c2040]/60 rounded-xl px-3 py-2">
+                          <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 w-7 flex-shrink-0">Email</span>
+                          <span className="flex-1 text-xs font-mono text-slate-700 dark:text-slate-300 truncate">{cred.username}</span>
+                          <button
+                            onClick={() => copyText(cred.username!, `u-${cred.id}`)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-[#122240] border border-orange-100 dark:border-[#1a3355] text-slate-500 dark:text-slate-400 hover:border-orange-400 hover:text-orange-500 transition-all flex-shrink-0"
+                            title="Copy email"
+                          >
+                            {copied === `u-${cred.id}` ? <><Check size={10} className="text-emerald-500" /> Copied</> : <><Copy size={10} /> Copy</>}
+                          </button>
+                        </div>
+                      )}
+
+                      {cred.password !== null && cred.password !== '' && (
+                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#0c2040]/60 rounded-xl px-3 py-2">
+                          <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 w-7 flex-shrink-0">Pass</span>
+                          <span className="flex-1 text-xs font-mono text-slate-700 dark:text-slate-300 truncate select-none">
+                            {isVisible ? cred.password : '●●●●●●●●'}
+                          </span>
+                          <button
+                            onClick={() => toggleCredVisible(cred.id)}
+                            className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#122240] transition-colors flex-shrink-0"
+                            title={isVisible ? 'Hide' : 'Show'}
+                          >
+                            {isVisible
+                              ? <EyeOff size={12} className="text-orange-400" />
+                              : <Eye size={12} className="text-slate-400 hover:text-orange-400" />}
+                          </button>
+                          <button
+                            onClick={() => copyText(cred.password!, `p-${cred.id}`)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-[#122240] border border-orange-100 dark:border-[#1a3355] text-slate-500 dark:text-slate-400 hover:border-orange-400 hover:text-orange-500 transition-all flex-shrink-0"
+                            title="Copy password"
+                          >
+                            {copied === `p-${cred.id}` ? <><Check size={10} className="text-emerald-500" /> Copied</> : <><Copy size={10} /> Copy</>}
+                          </button>
+                        </div>
+                      )}
+
+                      {safeCredUrl && (
+                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#0c2040]/60 rounded-xl px-3 py-2">
+                          <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 w-7 flex-shrink-0">URL</span>
+                          <span className="flex-1 text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">{cred.url}</span>
+                          <button
+                            onClick={() => copyText(cred.url!, `uc-${cred.id}`)}
+                            className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#122240] transition-colors flex-shrink-0"
+                            title="Copy URL"
+                          >
+                            {copied === `uc-${cred.id}` ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="text-slate-400" />}
+                          </button>
+                          <a
+                            href={safeCredUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-orange-500 hover:bg-orange-400 text-white transition-colors flex-shrink-0"
+                            title="Open in new tab"
+                          >
+                            Go <ExternalLink size={10} />
+                          </a>
+                        </div>
+                      )}
+
+                      {cred.notes && (
+                        <p className="text-xs text-slate-400 dark:text-slate-500 px-1 pt-0.5 line-clamp-2">{cred.notes}</p>
+                      )}
                     </div>
                   </div>
                 )
