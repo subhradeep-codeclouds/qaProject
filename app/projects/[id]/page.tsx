@@ -6,7 +6,7 @@ import Header from '@/components/Header'
 import {
   ArrowLeft, Plus, Lock, Globe, FileSpreadsheet, ClipboardList,
   FileBarChart2, Trash2, Eye, EyeOff, ExternalLink, Copy, X,
-  ShieldCheck, AlertTriangle, Check,
+  ShieldCheck, AlertTriangle, Check, Pencil,
 } from 'lucide-react'
 import {
   supabase,
@@ -73,6 +73,11 @@ export default function ProjectDetailPage() {
   const [urlForm,   setUrlForm]   = useState({ label: '', url: '', env: 'dev' as ProjectUrl['env'] })
   const [sheetForm, setSheetForm] = useState({ title: '', url: '', type: 'test_cases' as ProjectSheet['type'] })
 
+  // Edit tracking — null = add mode, string = edit mode (the item's id)
+  const [editingCredId,  setEditingCredId]  = useState<string | null>(null)
+  const [editingUrlId,   setEditingUrlId]   = useState<string | null>(null)
+  const [editingSheetId, setEditingSheetId] = useState<string | null>(null)
+
   // ── Fetch ────────────────────────────────────────────────────────────────
 
   const fetchData = useCallback(async () => {
@@ -118,34 +123,52 @@ export default function ProjectDetailPage() {
 
   function closeCredModal() {
     setShowCredModal(false)
+    setEditingCredId(null)
     setCredForm({ title: '', username: '', password: '', url: '', notes: '' })
   }
   function closeUrlModal() {
     setShowUrlModal(false)
+    setEditingUrlId(null)
     setUrlForm({ label: '', url: '', env: 'dev' })
   }
   function closeSheetModal() {
     setShowSheetModal(false)
+    setEditingSheetId(null)
     setSheetForm({ title: '', url: '', type: 'test_cases' })
   }
 
   // ── CRUD ─────────────────────────────────────────────────────────────────
 
-  async function addCredential() {
+  // ── Credential CRUD ──────────────────────────────────────────────────────
+
+  function openEditCred(cred: ProjectCredential) {
+    setCredForm({
+      title:    cred.title,
+      username: cred.username ?? '',
+      password: cred.password ?? '',
+      url:      cred.url ?? '',
+      notes:    cred.notes ?? '',
+    })
+    setEditingCredId(cred.id)
+    setShowCredModal(true)
+  }
+
+  async function saveCred() {
     if (!credForm.title.trim()) return toast.error('Title is required')
     setSaving(true)
     const payload = {
-      project_id: id,
       title:    credForm.title.trim(),
       username: credForm.username.trim() || null,
       password: credForm.password || null,
       url:      sanitizeUrl(credForm.url) ?? null,
       notes:    credForm.notes.trim() || null,
     }
-    const { error } = await supabase.from('project_credentials').insert([payload])
+    const { error } = editingCredId
+      ? await supabase.from('project_credentials').update(payload).eq('id', editingCredId)
+      : await supabase.from('project_credentials').insert([{ ...payload, project_id: id }])
     setSaving(false)
     if (error) return toast.error(error.message || 'Failed to save credential')
-    toast.success('Credential saved!')
+    toast.success(editingCredId ? 'Credential updated!' : 'Credential saved!')
     closeCredModal()
     fetchData()
   }
@@ -156,18 +179,27 @@ export default function ProjectDetailPage() {
     setCredentials(prev => prev.filter(c => c.id !== credId))
   }
 
-  async function addUrl() {
+  // ── URL CRUD ─────────────────────────────────────────────────────────────
+
+  function openEditUrl(pu: ProjectUrl) {
+    setUrlForm({ label: pu.label, url: pu.url, env: pu.env })
+    setEditingUrlId(pu.id)
+    setShowUrlModal(true)
+  }
+
+  async function saveUrl() {
     if (!urlForm.label.trim()) return toast.error('Label is required')
     if (!urlForm.url.trim())   return toast.error('URL is required')
     const safeUrl = sanitizeUrl(urlForm.url)
     if (!safeUrl) return toast.error('URL must start with http:// or https://')
     setSaving(true)
-    const { error } = await supabase.from('project_urls').insert([{
-      project_id: id, label: urlForm.label.trim(), url: safeUrl, env: urlForm.env,
-    }])
+    const payload = { label: urlForm.label.trim(), url: safeUrl, env: urlForm.env }
+    const { error } = editingUrlId
+      ? await supabase.from('project_urls').update(payload).eq('id', editingUrlId)
+      : await supabase.from('project_urls').insert([{ ...payload, project_id: id }])
     setSaving(false)
     if (error) return toast.error(error.message || 'Failed to save URL')
-    toast.success('URL saved!')
+    toast.success(editingUrlId ? 'URL updated!' : 'URL saved!')
     closeUrlModal()
     fetchData()
   }
@@ -178,18 +210,27 @@ export default function ProjectDetailPage() {
     setProjectUrls(prev => prev.filter(u => u.id !== urlId))
   }
 
-  async function addSheet() {
+  // ── Sheet CRUD ───────────────────────────────────────────────────────────
+
+  function openEditSheet(sheet: ProjectSheet) {
+    setSheetForm({ title: sheet.title, url: sheet.url, type: sheet.type })
+    setEditingSheetId(sheet.id)
+    setShowSheetModal(true)
+  }
+
+  async function saveSheet() {
     if (!sheetForm.title.trim()) return toast.error('Title is required')
     if (!sheetForm.url.trim())   return toast.error('URL is required')
     const safeUrl = sanitizeUrl(sheetForm.url)
     if (!safeUrl) return toast.error('URL must start with http:// or https://')
     setSaving(true)
-    const { error } = await supabase.from('project_sheets').insert([{
-      project_id: id, title: sheetForm.title.trim(), url: safeUrl, type: sheetForm.type,
-    }])
+    const payload = { title: sheetForm.title.trim(), url: safeUrl, type: sheetForm.type }
+    const { error } = editingSheetId
+      ? await supabase.from('project_sheets').update(payload).eq('id', editingSheetId)
+      : await supabase.from('project_sheets').insert([{ ...payload, project_id: id }])
     setSaving(false)
     if (error) return toast.error(error.message || 'Failed to save sheet link')
-    toast.success('Sheet link saved!')
+    toast.success(editingSheetId ? 'Sheet updated!' : 'Sheet saved!')
     closeSheetModal()
     fetchData()
   }
@@ -301,13 +342,22 @@ export default function ProjectDetailPage() {
                         </div>
                         <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{cred.title}</p>
                       </div>
-                      <button
-                        onClick={() => deleteCredential(cred.id)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors flex-shrink-0 ml-2"
-                        title="Delete credential"
-                      >
-                        <Trash2 size={13} className="text-red-400" />
-                      </button>
+                      <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                        <button
+                          onClick={() => openEditCred(cred)}
+                          className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors"
+                          title="Edit credential"
+                        >
+                          <Pencil size={13} className="text-slate-400 hover:text-orange-500" />
+                        </button>
+                        <button
+                          onClick={() => deleteCredential(cred.id)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                          title="Delete credential"
+                        >
+                          <Trash2 size={13} className="text-red-400" />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Rows */}
@@ -429,6 +479,13 @@ export default function ProjectDetailPage() {
                         </a>
                       )}
                       <button
+                        onClick={() => openEditUrl(pu)}
+                        className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors"
+                        title="Edit URL"
+                      >
+                        <Pencil size={13} className="text-slate-400 hover:text-orange-500" />
+                      </button>
+                      <button
                         onClick={() => deleteUrl(pu.id)}
                         className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
                         title="Delete URL"
@@ -488,6 +545,13 @@ export default function ProjectDetailPage() {
                           <ExternalLink size={13} className="text-orange-500" />
                         </a>
                       )}
+                      <button
+                        onClick={() => openEditSheet(sheet)}
+                        className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-all"
+                        title="Edit sheet"
+                      >
+                        <Pencil size={13} className="text-slate-400 hover:text-orange-500" />
+                      </button>
                       <button
                         onClick={() => deleteSheet(sheet.id)}
                         className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-950/40 transition-all"
@@ -650,7 +714,7 @@ export default function ProjectDetailPage() {
 
       {/* ── Add Credential modal ───────────────────────────────────────── */}
       {showCredModal && (
-        <Modal title="Add Credential" sub="Stored with AES-256 + TLS encryption" onClose={closeCredModal}>
+        <Modal title={editingCredId ? 'Edit Credential' : 'Add Credential'} sub="Stored with AES-256 + TLS encryption" onClose={closeCredModal}>
           <div className="space-y-3">
             <Field label="Title *">
               <input value={credForm.title} onChange={e => setCredForm(f => ({ ...f, title: e.target.value }))}
@@ -673,13 +737,13 @@ export default function ProjectDetailPage() {
                 placeholder="Additional notes..." rows={2} className="input-field resize-none" />
             </Field>
           </div>
-          <ModalFooter onCancel={closeCredModal} onSave={addCredential} saving={saving} saveLabel="Save Credential" />
+          <ModalFooter onCancel={closeCredModal} onSave={saveCred} saving={saving} saveLabel={editingCredId ? 'Save Changes' : 'Save Credential'} />
         </Modal>
       )}
 
       {/* ── Add URL modal ──────────────────────────────────────────────── */}
       {showUrlModal && (
-        <Modal title="Add Environment URL" onClose={closeUrlModal}>
+        <Modal title={editingUrlId ? 'Edit URL' : 'Add Environment URL'} onClose={closeUrlModal}>
           <div className="space-y-3">
             <Field label="Environment">
               <div className="flex gap-2 flex-wrap">
@@ -706,13 +770,13 @@ export default function ProjectDetailPage() {
                 placeholder="https://..." className="input-field" />
             </Field>
           </div>
-          <ModalFooter onCancel={closeUrlModal} onSave={addUrl} saving={saving} saveLabel="Save URL" />
+          <ModalFooter onCancel={closeUrlModal} onSave={saveUrl} saving={saving} saveLabel={editingUrlId ? 'Save Changes' : 'Save URL'} />
         </Modal>
       )}
 
       {/* ── Add Sheet modal ────────────────────────────────────────────── */}
       {showSheetModal && (
-        <Modal title="Add Sheet / Document Link" onClose={closeSheetModal}>
+        <Modal title={editingSheetId ? 'Edit Sheet' : 'Add Sheet / Document Link'} onClose={closeSheetModal}>
           <div className="space-y-3">
             <Field label="Type">
               <div className="flex gap-2 flex-wrap">
@@ -742,7 +806,7 @@ export default function ProjectDetailPage() {
               </p>
             </Field>
           </div>
-          <ModalFooter onCancel={closeSheetModal} onSave={addSheet} saving={saving} saveLabel="Save Sheet" />
+          <ModalFooter onCancel={closeSheetModal} onSave={saveSheet} saving={saving} saveLabel={editingSheetId ? 'Save Changes' : 'Save Sheet'} />
         </Modal>
       )}
     </div>
