@@ -328,109 +328,98 @@ export default function ProjectDetailPage() {
           {credentials.length === 0 ? (
             <EmptyState icon={<Lock size={28} />} message="No credentials yet." sub="Store login details securely." />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {credentials.map(cred => {
-                const isVisible = visibleCreds.has(cred.id)
-                const safeCredUrl = sanitizeUrl(cred.url)
-                return (
-                  <div key={cred.id} className="card p-4">
-                    {/* Card header */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-                          <Lock size={13} className="text-orange-500" />
-                        </div>
-                        <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{cred.title}</p>
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                        <button
-                          onClick={() => openEditCred(cred)}
-                          className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors"
-                          title="Edit credential"
-                        >
-                          <Pencil size={13} className="text-slate-400 hover:text-orange-500" />
-                        </button>
-                        <button
-                          onClick={() => deleteCredential(cred.id)}
-                          className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-                          title="Delete credential"
-                        >
-                          <Trash2 size={13} className="text-red-400" />
-                        </button>
-                      </div>
-                    </div>
+            <div className="overflow-x-auto -mx-1">
+              <table className="w-full min-w-[580px]">
+                <thead>
+                  <tr className="border-b border-orange-100 dark:border-[#1a3355]">
+                    {['Title', 'Email / Username', 'Password', 'URL', ''].map(h => (
+                      <th key={h} className="text-left text-[10px] uppercase font-bold tracking-wide text-slate-400 dark:text-slate-500 py-2 px-3 last:text-right">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {credentials.map(cred => {
+                    const isVisible   = visibleCreds.has(cred.id)
+                    const safeCredUrl = sanitizeUrl(cred.url)
+                    return (
+                      <tr key={cred.id} className="border-b border-orange-50 dark:border-[#1a3355]/40 hover:bg-orange-50/50 dark:hover:bg-[#0c2040]/50 transition-colors group">
 
-                    {/* Rows */}
-                    <div className="space-y-2">
-                      {cred.username && (
-                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#0c2040]/60 rounded-xl px-3 py-2">
-                          <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 w-7 flex-shrink-0">Email</span>
-                          <span className="flex-1 text-xs font-mono text-slate-700 dark:text-slate-300 truncate">{cred.username}</span>
-                          <button
-                            onClick={() => copyText(cred.username!, `u-${cred.id}`)}
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-[#122240] border border-orange-100 dark:border-[#1a3355] text-slate-500 dark:text-slate-400 hover:border-orange-400 hover:text-orange-500 transition-all flex-shrink-0"
-                            title="Copy email"
-                          >
-                            {copied === `u-${cred.id}` ? <><Check size={10} className="text-emerald-500" /> Copied</> : <><Copy size={10} /> Copy</>}
-                          </button>
-                        </div>
-                      )}
+                        {/* Title + notes */}
+                        <td className="py-2.5 px-3 w-[22%]">
+                          <div className="flex items-center gap-1.5">
+                            <Lock size={11} className="text-orange-400 flex-shrink-0" />
+                            <span className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[140px]">{cred.title}</span>
+                          </div>
+                          {cred.notes && (
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5 ml-4">{cred.notes}</p>
+                          )}
+                        </td>
 
-                      {cred.password !== null && cred.password !== '' && (
-                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#0c2040]/60 rounded-xl px-3 py-2">
-                          <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 w-7 flex-shrink-0">Pass</span>
-                          <span className="flex-1 text-xs font-mono text-slate-700 dark:text-slate-300 truncate select-none">
-                            {isVisible ? cred.password : '●●●●●●●●'}
-                          </span>
-                          <button
-                            onClick={() => toggleCredVisible(cred.id)}
-                            className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#122240] transition-colors flex-shrink-0"
-                            title={isVisible ? 'Hide' : 'Show'}
-                          >
-                            {isVisible
-                              ? <EyeOff size={12} className="text-orange-400" />
-                              : <Eye size={12} className="text-slate-400 hover:text-orange-400" />}
-                          </button>
-                          <button
-                            onClick={() => copyText(cred.password!, `p-${cred.id}`)}
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-[#122240] border border-orange-100 dark:border-[#1a3355] text-slate-500 dark:text-slate-400 hover:border-orange-400 hover:text-orange-500 transition-all flex-shrink-0"
-                            title="Copy password"
-                          >
-                            {copied === `p-${cred.id}` ? <><Check size={10} className="text-emerald-500" /> Copied</> : <><Copy size={10} /> Copy</>}
-                          </button>
-                        </div>
-                      )}
+                        {/* Username */}
+                        <td className="py-2.5 px-3 w-[26%]">
+                          {cred.username ? (
+                            <div className="flex items-center gap-1">
+                              <span className="font-mono text-xs text-slate-600 dark:text-slate-300 truncate max-w-[150px]">{cred.username}</span>
+                              <button onClick={() => copyText(cred.username!, `u-${cred.id}`)}
+                                className="p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+                                title="Copy email">
+                                {copied === `u-${cred.id}` ? <Check size={10} className="text-emerald-500" /> : <Copy size={10} className="text-slate-400" />}
+                              </button>
+                            </div>
+                          ) : <span className="text-slate-300 dark:text-slate-700 text-xs">—</span>}
+                        </td>
 
-                      {safeCredUrl && (
-                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#0c2040]/60 rounded-xl px-3 py-2">
-                          <span className="text-[10px] font-bold uppercase text-slate-400 dark:text-slate-500 w-7 flex-shrink-0">URL</span>
-                          <span className="flex-1 text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">{cred.url}</span>
-                          <button
-                            onClick={() => copyText(cred.url!, `uc-${cred.id}`)}
-                            className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#122240] transition-colors flex-shrink-0"
-                            title="Copy URL"
-                          >
-                            {copied === `uc-${cred.id}` ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="text-slate-400" />}
-                          </button>
-                          <a
-                            href={safeCredUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-orange-500 hover:bg-orange-400 text-white transition-colors flex-shrink-0"
-                            title="Open in new tab"
-                          >
-                            Go <ExternalLink size={10} />
-                          </a>
-                        </div>
-                      )}
+                        {/* Password */}
+                        <td className="py-2.5 px-3 w-[24%]">
+                          {cred.password ? (
+                            <div className="flex items-center gap-1">
+                              <span className="font-mono text-xs text-slate-600 dark:text-slate-300 select-none">
+                                {isVisible ? cred.password : '●●●●●●●●'}
+                              </span>
+                              <button onClick={() => toggleCredVisible(cred.id)}
+                                className="p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors flex-shrink-0"
+                                title={isVisible ? 'Hide' : 'Show'}>
+                                {isVisible ? <EyeOff size={10} className="text-orange-400" /> : <Eye size={10} className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400" />}
+                              </button>
+                              <button onClick={() => copyText(cred.password!, `p-${cred.id}`)}
+                                className="p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+                                title="Copy password">
+                                {copied === `p-${cred.id}` ? <Check size={10} className="text-emerald-500" /> : <Copy size={10} className="text-slate-400" />}
+                              </button>
+                            </div>
+                          ) : <span className="text-slate-300 dark:text-slate-700 text-xs">—</span>}
+                        </td>
 
-                      {cred.notes && (
-                        <p className="text-xs text-slate-400 dark:text-slate-500 px-1 pt-0.5 line-clamp-2">{cred.notes}</p>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
+                        {/* URL / Go button */}
+                        <td className="py-2.5 px-3 w-[14%]">
+                          {safeCredUrl ? (
+                            <a href={safeCredUrl} target="_blank" rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-orange-500 hover:bg-orange-400 text-white transition-colors">
+                              Go <ExternalLink size={9} />
+                            </a>
+                          ) : <span className="text-slate-300 dark:text-slate-700 text-xs">—</span>}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center justify-end gap-0.5">
+                            <button onClick={() => openEditCred(cred)}
+                              className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                              title="Edit">
+                              <Pencil size={12} className="text-slate-400" />
+                            </button>
+                            <button onClick={() => deleteCredential(cred.id)}
+                              className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors opacity-0 group-hover:opacity-100"
+                              title="Delete">
+                              <Trash2 size={12} className="text-red-400" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </Section>
@@ -446,56 +435,61 @@ export default function ProjectDetailPage() {
           {projectUrls.length === 0 ? (
             <EmptyState icon={<Globe size={28} />} message="No URLs added yet." sub="Add dev, staging, and production links." />
           ) : (
-            <div className="space-y-2">
-              {projectUrls.map(pu => {
-                const env = ENV_CONFIG[pu.env] ?? ENV_CONFIG.custom
-                const safeUrl = sanitizeUrl(pu.url)
-                return (
-                  <div key={pu.id} className="flex items-center gap-3 p-3 rounded-xl border border-orange-50 dark:border-[#1a3355] bg-orange-50/40 dark:bg-[#0c2040]/40 group">
-                    <span className={cn('badge text-[10px] font-bold flex-shrink-0', env.cls)}>
-                      {env.label}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-200 truncate">{pu.label}</p>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate font-mono">{pu.url}</p>
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => copyText(pu.url, `url-${pu.id}`)}
-                        className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#1a3355] transition-colors"
-                        title="Copy URL"
-                      >
-                        {copied === `url-${pu.id}` ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} className="text-slate-400" />}
-                      </button>
-                      {safeUrl && (
-                        <a
-                          href={safeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#1a3355] transition-colors"
-                          title="Open URL"
-                        >
-                          <ExternalLink size={13} className="text-orange-500" />
-                        </a>
-                      )}
-                      <button
-                        onClick={() => openEditUrl(pu)}
-                        className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors"
-                        title="Edit URL"
-                      >
-                        <Pencil size={13} className="text-slate-400 hover:text-orange-500" />
-                      </button>
-                      <button
-                        onClick={() => deleteUrl(pu.id)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-                        title="Delete URL"
-                      >
-                        <Trash2 size={13} className="text-red-400" />
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
+            <div className="overflow-x-auto -mx-1">
+              <table className="w-full min-w-[440px]">
+                <thead>
+                  <tr className="border-b border-orange-100 dark:border-[#1a3355]">
+                    {['Env', 'Label', 'URL', ''].map(h => (
+                      <th key={h} className="text-left text-[10px] uppercase font-bold tracking-wide text-slate-400 dark:text-slate-500 py-2 px-3 last:text-right">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {projectUrls.map(pu => {
+                    const env     = ENV_CONFIG[pu.env] ?? ENV_CONFIG.custom
+                    const safeUrl = sanitizeUrl(pu.url)
+                    return (
+                      <tr key={pu.id} className="border-b border-orange-50 dark:border-[#1a3355]/40 hover:bg-orange-50/50 dark:hover:bg-[#0c2040]/50 transition-colors group">
+                        <td className="py-2.5 px-3 w-[80px]">
+                          <span className={cn('badge text-[10px] font-bold', env.cls)}>{env.label}</span>
+                        </td>
+                        <td className="py-2.5 px-3 w-[22%]">
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{pu.label}</span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="text-xs font-mono text-slate-500 dark:text-slate-400 truncate max-w-xs block">{pu.url}</span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center justify-end gap-0.5">
+                            <button onClick={() => copyText(pu.url, `url-${pu.id}`)}
+                              className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#1a3355] transition-colors opacity-0 group-hover:opacity-100"
+                              title="Copy URL">
+                              {copied === `url-${pu.id}` ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="text-slate-400" />}
+                            </button>
+                            {safeUrl && (
+                              <a href={safeUrl} target="_blank" rel="noopener noreferrer"
+                                className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#1a3355] transition-colors opacity-0 group-hover:opacity-100"
+                                title="Open in new tab">
+                                <ExternalLink size={12} className="text-orange-500" />
+                              </a>
+                            )}
+                            <button onClick={() => openEditUrl(pu)}
+                              className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                              title="Edit">
+                              <Pencil size={12} className="text-slate-400" />
+                            </button>
+                            <button onClick={() => deleteUrl(pu.id)}
+                              className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors opacity-0 group-hover:opacity-100"
+                              title="Delete">
+                              <Trash2 size={12} className="text-red-400" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </Section>
@@ -511,58 +505,60 @@ export default function ProjectDetailPage() {
           {sheets.length === 0 ? (
             <EmptyState icon={<FileSpreadsheet size={28} />} message="No sheets linked yet." sub="Add Google Sheets for test cases, RTM, regression, and more." />
           ) : (
-            <div className="space-y-2">
-              {sheets.map(sheet => {
-                const type   = SHEET_TYPE_CONFIG[sheet.type] ?? SHEET_TYPE_CONFIG.other
-                const safeUrl = sanitizeUrl(sheet.url)
-                const embedUrl = getGoogleSheetsEmbedUrl(sheet.url)
-                return (
-                  <div key={sheet.id} className="flex items-center gap-3 p-3 rounded-xl border border-orange-50 dark:border-[#1a3355] bg-orange-50/40 dark:bg-[#0c2040]/40 group">
-                    <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-                      <FileSpreadsheet size={14} className="text-orange-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">{sheet.title}</p>
-                      <span className={cn('badge text-[10px] mt-0.5', type.cls)}>{type.label}</span>
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      {(safeUrl || embedUrl) && (
-                        <button
-                          onClick={() => setViewSheetUrl(sheet.url)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 transition-colors border border-orange-200 dark:border-orange-500/30"
-                        >
-                          <Eye size={11} /> View
-                        </button>
-                      )}
-                      {safeUrl && (
-                        <a
-                          href={safeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-white dark:hover:bg-[#1a3355] transition-all"
-                          title="Open in new tab"
-                        >
-                          <ExternalLink size={13} className="text-orange-500" />
-                        </a>
-                      )}
-                      <button
-                        onClick={() => openEditSheet(sheet)}
-                        className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-all"
-                        title="Edit sheet"
-                      >
-                        <Pencil size={13} className="text-slate-400 hover:text-orange-500" />
-                      </button>
-                      <button
-                        onClick={() => deleteSheet(sheet.id)}
-                        className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-950/40 transition-all"
-                        title="Remove sheet"
-                      >
-                        <Trash2 size={13} className="text-red-400" />
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
+            <div className="overflow-x-auto -mx-1">
+              <table className="w-full min-w-[380px]">
+                <thead>
+                  <tr className="border-b border-orange-100 dark:border-[#1a3355]">
+                    {['Type', 'Title', ''].map(h => (
+                      <th key={h} className="text-left text-[10px] uppercase font-bold tracking-wide text-slate-400 dark:text-slate-500 py-2 px-3 last:text-right">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sheets.map(sheet => {
+                    const type     = SHEET_TYPE_CONFIG[sheet.type] ?? SHEET_TYPE_CONFIG.other
+                    const safeUrl  = sanitizeUrl(sheet.url)
+                    const embedUrl = getGoogleSheetsEmbedUrl(sheet.url)
+                    return (
+                      <tr key={sheet.id} className="border-b border-orange-50 dark:border-[#1a3355]/40 hover:bg-orange-50/50 dark:hover:bg-[#0c2040]/50 transition-colors group">
+                        <td className="py-2.5 px-3 w-[120px]">
+                          <span className={cn('badge text-[10px]', type.cls)}>{type.label}</span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{sheet.title}</span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center justify-end gap-0.5">
+                            {(safeUrl || embedUrl) && (
+                              <button onClick={() => setViewSheetUrl(sheet.url)}
+                                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 border border-orange-200 dark:border-orange-500/30 transition-colors">
+                                <Eye size={10} /> View
+                              </button>
+                            )}
+                            {safeUrl && (
+                              <a href={safeUrl} target="_blank" rel="noopener noreferrer"
+                                className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#1a3355] transition-colors opacity-0 group-hover:opacity-100"
+                                title="Open in new tab">
+                                <ExternalLink size={12} className="text-orange-500" />
+                              </a>
+                            )}
+                            <button onClick={() => openEditSheet(sheet)}
+                              className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                              title="Edit">
+                              <Pencil size={12} className="text-slate-400" />
+                            </button>
+                            <button onClick={() => deleteSheet(sheet.id)}
+                              className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors opacity-0 group-hover:opacity-100"
+                              title="Delete">
+                              <Trash2 size={12} className="text-red-400" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </Section>
