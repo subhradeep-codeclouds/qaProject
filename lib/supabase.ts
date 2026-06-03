@@ -104,3 +104,13 @@ export type ProjectNote = {
   note: string | null
   created_at: string
 }
+
+export type ProjectAttachment = {
+  id: string
+  project_id: string
+  name: string
+  storage_path: string
+  size: number
+  mime_type: string | null
+  created_at: string
+}

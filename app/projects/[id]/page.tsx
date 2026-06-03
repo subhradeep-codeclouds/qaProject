@@ -7,6 +7,8 @@ import {
   ArrowLeft, Plus, Lock, Globe, FileSpreadsheet, ClipboardList,
   FileBarChart2, Trash2, Eye, EyeOff, ExternalLink, Copy, X,
   ShieldCheck, AlertTriangle, Check, Pencil, StickyNote,
+  Paperclip, Upload, Download, Video, FileText, CalendarDays,
+  ImageIcon, File as FileIcon,
 } from 'lucide-react'
 import {
   supabase,
@@ -17,6 +19,7 @@ import {
   type TestCase,
   type TestReport,
   type ProjectNote,
+  type ProjectAttachment,
 } from '@/lib/supabase'
 import { cn, getProjectGradient, formatDate, STATUS_STYLES, PRIORITY_STYLES } from '@/lib/utils'
 import { sanitizeUrl, getGoogleSheetsEmbedUrl } from '@/lib/security'
@@ -54,6 +57,8 @@ export default function ProjectDetailPage() {
   const [testCases,   setTestCases]   = useState<TestCase[]>([])
   const [reports,     setReports]     = useState<TestReport[]>([])
   const [notes,       setNotes]       = useState<ProjectNote[]>([])
+  const [attachments, setAttachments] = useState<ProjectAttachment[]>([])
+  const [uploading,   setUploading]   = useState(false)
   const [loading,     setLoading]     = useState(true)
 
   // Visible credential passwords (stored by id)
@@ -87,7 +92,7 @@ export default function ProjectDetailPage() {
 
   const fetchData = useCallback(async () => {
     if (!id) return
-    const [projRes, credRes, urlRes, sheetRes, tcRes, repRes, noteRes] = await Promise.all([
+    const [projRes, credRes, urlRes, sheetRes, tcRes, repRes, noteRes, attRes] = await Promise.all([
       supabase.from('projects').select('*').eq('id', id).single(),
       supabase.from('project_credentials').select('*').eq('project_id', id).order('created_at'),
       supabase.from('project_urls').select('*').eq('project_id', id).order('env').order('created_at'),
@@ -95,6 +100,7 @@ export default function ProjectDetailPage() {
       supabase.from('test_cases').select('*').eq('project_id', id).order('created_at', { ascending: false }).limit(5),
       supabase.from('test_reports').select('*').eq('project_id', id).order('test_date', { ascending: false }).limit(3),
       supabase.from('project_notes').select('*').eq('project_id', id).order('date', { ascending: false }),
+      supabase.from('project_attachments').select('*').eq('project_id', id).order('created_at', { ascending: false }),
     ])
     if (projRes.data)  setProject(projRes.data)
     if (credRes.data)  setCredentials(credRes.data)
@@ -103,6 +109,7 @@ export default function ProjectDetailPage() {
     if (tcRes.data)    setTestCases(tcRes.data)
     if (repRes.data)   setReports(repRes.data)
     if (noteRes.data)  setNotes(noteRes.data)
+    if (attRes.data)   setAttachments(attRes.data)
     setLoading(false)
   }, [id])
 
@@ -286,6 +293,56 @@ export default function ProjectDetailPage() {
     setNotes(prev => prev.filter(n => n.id !== noteId))
   }
 
+  // ── Attachment CRUD ──────────────────────────────────────────────────────
+
+  async function uploadAttachments(files: FileList) {
+    setUploading(true)
+    let successCount = 0
+    await Promise.all(Array.from(files).map(async (file) => {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const path = `${id}/${Date.now()}-${safeName}`
+      const { error: storageErr } = await supabase.storage
+        .from('project-attachments')
+        .upload(path, file)
+      if (storageErr) { toast.error(`Upload failed: ${file.name}`); return }
+      const { error: dbErr } = await supabase.from('project_attachments').insert([{
+        project_id: id,
+        name: file.name,
+        storage_path: path,
+        size: file.size,
+        mime_type: file.type || null,
+      }])
+      if (dbErr) toast.error(`Metadata save failed: ${file.name}`)
+      else successCount++
+    }))
+    setUploading(false)
+    if (successCount > 0) {
+      toast.success(`${successCount} file${successCount > 1 ? 's' : ''} uploaded!`)
+      fetchData()
+    }
+  }
+
+  async function downloadAttachment(att: ProjectAttachment) {
+    const toastId = toast.loading(`Downloading ${att.name}…`)
+    const { data, error } = await supabase.storage
+      .from('project-attachments')
+      .download(att.storage_path)
+    toast.dismiss(toastId)
+    if (error) return toast.error('Download failed')
+    const url = URL.createObjectURL(data)
+    const a = document.createElement('a')
+    a.href = url; a.download = att.name
+    document.body.appendChild(a); a.click()
+    document.body.removeChild(a); URL.revokeObjectURL(url)
+  }
+
+  async function deleteAttachment(att: ProjectAttachment) {
+    await supabase.storage.from('project-attachments').remove([att.storage_path])
+    await supabase.from('project_attachments').delete().eq('id', att.id)
+    toast.success('File deleted')
+    setAttachments(prev => prev.filter(a => a.id !== att.id))
+  }
+
   // ── Loading / not found ──────────────────────────────────────────────────
 
   if (loading) return (
@@ -345,6 +402,7 @@ export default function ProjectDetailPage() {
                   { n: testCases.length,   label: 'test cases' },
                   { n: reports.length,     label: 'reports' },
                   { n: notes.length,       label: 'notes' },
+                  { n: attachments.length, label: 'files' },
                 ].map(({ n, label }) => (
                   <span key={label} className="text-xs text-slate-400 dark:text-slate-500">
                     <strong className="text-slate-700 dark:text-slate-300 font-bold">{n}</strong> {label}
@@ -674,33 +732,84 @@ export default function ProjectDetailPage() {
           {notes.length === 0 ? (
             <EmptyState icon={<StickyNote size={28} />} message="No notes yet." sub="Add notes, observations or reminders for this project." />
           ) : (
-            <div className="space-y-2">
-              {notes.map(note => (
-                <div key={note.id} className="flex items-start gap-3 p-3 rounded-xl border border-violet-50 dark:border-[#1a3355] bg-violet-50/30 dark:bg-[#0c2040]/30 group">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{note.title}</p>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-[#1a3355] px-2 py-0.5 rounded-full">
-                        {formatDate(note.date)}
-                      </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {notes.map((note, idx) => {
+                const palette = NOTE_PALETTE[idx % NOTE_PALETTE.length]
+                return (
+                  <div key={note.id} className={cn(
+                    'group relative rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition-all duration-200',
+                    palette.border
+                  )}>
+                    {/* Accent bar */}
+                    <div className={cn('h-1.5 bg-gradient-to-r', palette.bar)} />
+                    {/* Card body */}
+                    <div className={cn('p-4', palette.bg)}>
+                      {/* Header row */}
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-slate-800 dark:text-slate-100 text-sm leading-tight">{note.title}</p>
+                          <div className={cn('flex items-center gap-1 mt-1 text-xs font-medium', palette.date)}>
+                            <CalendarDays size={11} />
+                            {formatDate(note.date)}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                          <button onClick={() => openEditNote(note)}
+                            className="p-1.5 rounded-lg hover:bg-white/60 dark:hover:bg-white/10 transition-colors" title="Edit">
+                            <Pencil size={12} className="text-slate-500" />
+                          </button>
+                          <button onClick={() => deleteNote(note.id)}
+                            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors" title="Delete">
+                            <Trash2 size={12} className="text-red-400" />
+                          </button>
+                        </div>
+                      </div>
+                      {/* Note text */}
+                      {note.note && (
+                        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap border-t border-black/5 dark:border-white/10 pt-3">
+                          {note.note}
+                        </p>
+                      )}
                     </div>
-                    {note.note && (
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{note.note}</p>
-                    )}
                   </div>
-                  <div className="flex items-center gap-0.5 flex-shrink-0">
-                    <button onClick={() => openEditNote(note)}
-                      className="p-1.5 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors opacity-0 group-hover:opacity-100"
-                      title="Edit">
-                      <Pencil size={12} className="text-slate-400" />
-                    </button>
-                    <button onClick={() => deleteNote(note.id)}
-                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors opacity-0 group-hover:opacity-100"
-                      title="Delete">
-                      <Trash2 size={12} className="text-red-400" />
-                    </button>
-                  </div>
-                </div>
+                )
+              })}
+            </div>
+          )}
+        </Section>
+
+        {/* ── Attachments ─────────────────────────────────────────────── */}
+        <Section
+          icon={<Paperclip size={15} className="text-violet-500" />}
+          title="Attachments"
+          count={attachments.length}
+          actionEl={
+            <label className={cn(
+              'btn-primary py-1.5 px-3 text-xs flex-shrink-0',
+              uploading && 'opacity-60 cursor-not-allowed pointer-events-none'
+            )}>
+              <Upload size={13} /> {uploading ? 'Uploading…' : 'Upload Files'}
+              <input
+                type="file"
+                multiple
+                className="hidden"
+                disabled={uploading}
+                onChange={e => { if (e.target.files?.length) uploadAttachments(e.target.files) }}
+              />
+            </label>
+          }
+        >
+          {attachments.length === 0 ? (
+            <EmptyState icon={<Paperclip size={28} />} message="No files uploaded yet." sub="Upload images, videos, PDFs, docs, or any other files." />
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {attachments.map(att => (
+                <AttachmentCard
+                  key={att.id}
+                  attachment={att}
+                  onDownload={downloadAttachment}
+                  onDelete={deleteAttachment}
+                />
               ))}
             </div>
           )}
@@ -945,6 +1054,93 @@ export default function ProjectDetailPage() {
           <ModalFooter onCancel={closeNoteModal} onSave={saveNote} saving={saving} saveLabel={editingNoteId ? 'Save Changes' : 'Save Note'} />
         </Modal>
       )}
+    </div>
+  )
+}
+
+// ── Note palette ──────────────────────────────────────────────────────────
+const NOTE_PALETTE = [
+  { bar: 'from-violet-500 to-purple-600',  bg: 'bg-violet-50/70 dark:bg-violet-900/10',  border: 'border-violet-200 dark:border-violet-800/40',  date: 'text-violet-600 dark:text-violet-400' },
+  { bar: 'from-sky-500 to-blue-600',       bg: 'bg-sky-50/70 dark:bg-sky-900/10',        border: 'border-sky-200 dark:border-sky-800/40',        date: 'text-sky-600 dark:text-sky-400' },
+  { bar: 'from-emerald-500 to-teal-600',   bg: 'bg-emerald-50/70 dark:bg-emerald-900/10',border: 'border-emerald-200 dark:border-emerald-800/40', date: 'text-emerald-600 dark:text-emerald-400' },
+  { bar: 'from-fuchsia-500 to-pink-600',   bg: 'bg-fuchsia-50/70 dark:bg-fuchsia-900/10',border: 'border-fuchsia-200 dark:border-fuchsia-800/40', date: 'text-fuchsia-600 dark:text-fuchsia-400' },
+  { bar: 'from-indigo-500 to-violet-600',  bg: 'bg-indigo-50/70 dark:bg-indigo-900/10',  border: 'border-indigo-200 dark:border-indigo-800/40',  date: 'text-indigo-600 dark:text-indigo-400' },
+]
+
+// ── Attachment helpers ─────────────────────────────────────────────────────
+function getFileVisual(mimeType: string | null): { icon: React.ReactNode; label: string; color: string } {
+  if (mimeType?.startsWith('image/')) return { icon: <ImageIcon size={28} />, label: 'IMAGE', color: 'text-violet-500 bg-violet-50 dark:bg-violet-500/10' }
+  if (mimeType?.startsWith('video/')) return { icon: <Video size={28} />, label: 'VIDEO', color: 'text-blue-500 bg-blue-50 dark:bg-blue-500/10' }
+  if (mimeType === 'application/pdf') return { icon: <FileText size={28} />, label: 'PDF', color: 'text-red-500 bg-red-50 dark:bg-red-500/10' }
+  if (mimeType?.includes('word') || mimeType?.includes('document')) return { icon: <FileText size={28} />, label: 'DOC', color: 'text-blue-600 bg-blue-50 dark:bg-blue-500/10' }
+  if (mimeType?.includes('sheet') || mimeType?.includes('excel')) return { icon: <FileText size={28} />, label: 'XLS', color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10' }
+  return { icon: <FileIcon size={28} />, label: 'FILE', color: 'text-slate-500 bg-slate-100 dark:bg-slate-500/10' }
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1048576).toFixed(1)} MB`
+}
+
+function AttachmentCard({
+  attachment, onDownload, onDelete,
+}: {
+  attachment: ProjectAttachment
+  onDownload: (a: ProjectAttachment) => void
+  onDelete: (a: ProjectAttachment) => void
+}) {
+  const isImage = attachment.mime_type?.startsWith('image/')
+  const [imgUrl, setImgUrl] = useState<string | null>(null)
+  const visual = getFileVisual(attachment.mime_type)
+
+  useEffect(() => {
+    if (!isImage) return
+    supabase.storage.from('project-attachments')
+      .createSignedUrl(attachment.storage_path, 3600)
+      .then(({ data }) => { if (data) setImgUrl(data.signedUrl) })
+  }, [attachment.storage_path, isImage])
+
+  return (
+    <div className="group card flex flex-col overflow-hidden hover:shadow-md hover:border-violet-200 transition-all duration-200">
+      {/* Preview area */}
+      <div className="w-full h-28 bg-slate-50 dark:bg-[#0c2040]/60 flex items-center justify-center overflow-hidden flex-shrink-0">
+        {isImage && imgUrl ? (
+          <img src={imgUrl} alt={attachment.name} className="w-full h-full object-cover" />
+        ) : (
+          <div className={cn('flex flex-col items-center gap-1.5 p-3 rounded-xl', visual.color)}>
+            {visual.icon}
+            <span className="text-[9px] font-black tracking-widest">{visual.label}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="p-3 flex-1 flex flex-col gap-2">
+        <div>
+          <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate leading-tight" title={attachment.name}>
+            {attachment.name}
+          </p>
+          <p className="text-[10px] text-slate-400 mt-0.5">{formatFileSize(attachment.size)}</p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-1.5 mt-auto">
+          <button
+            onClick={() => onDownload(attachment)}
+            className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-500/20 border border-violet-200 dark:border-violet-500/30 text-[11px] font-semibold transition-colors"
+          >
+            <Download size={11} /> Download
+          </button>
+          <button
+            onClick={() => onDelete(attachment)}
+            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 border border-transparent hover:border-red-100 dark:hover:border-red-900/30 transition-colors flex-shrink-0"
+            title="Delete file"
+          >
+            <Trash2 size={13} className="text-red-400" />
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

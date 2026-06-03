@@ -146,6 +146,17 @@ CREATE TABLE IF NOT EXISTS project_notes (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Project attachments (files stored in Supabase Storage bucket: project-attachments)
+CREATE TABLE IF NOT EXISTS project_attachments (
+  id           UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  project_id   UUID REFERENCES projects(id) ON DELETE CASCADE,
+  name         TEXT NOT NULL,
+  storage_path TEXT NOT NULL,
+  size         BIGINT DEFAULT 0,
+  mime_type    TEXT,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ===========================
 -- Row Level Security
 -- Enable RLS on all tables so only authenticated sessions can access data.
@@ -154,6 +165,7 @@ CREATE TABLE IF NOT EXISTS project_notes (
 -- policies using auth.uid().
 -- ===========================
 
+ALTER TABLE project_attachments  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_notes       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE projects            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_resources   ENABLE ROW LEVEL SECURITY;
@@ -165,6 +177,7 @@ ALTER TABLE test_reports        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bugs                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE standup_notes       ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "portal_all" ON project_attachments  FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "portal_all" ON project_notes       FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "portal_all" ON projects            FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "portal_all" ON project_resources   FOR ALL USING (true) WITH CHECK (true);
