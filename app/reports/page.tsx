@@ -71,7 +71,7 @@ function ReportsContent() {
       <div className="flex h-1.5 rounded-full overflow-hidden gap-0.5">
         <div className="bg-emerald-500 rounded-full" style={{ width: `${(passed / total) * 100}%` }} />
         <div className="bg-red-500 rounded-full" style={{ width: `${(failed / total) * 100}%` }} />
-        <div className="bg-orange-500 rounded-full" style={{ width: `${(blocked / total) * 100}%` }} />
+        <div className="bg-violet-500 rounded-full" style={{ width: `${(blocked / total) * 100}%` }} />
         <div className="bg-slate-500 rounded-full" style={{ width: `${(skipped / total) * 100}%` }} />
       </div>
     )
@@ -151,7 +151,7 @@ function ReportsContent() {
                       <span className="flex items-center gap-1 text-xs text-red-400">
                         <XCircle size={12} /> {r.failed} failed
                       </span>
-                      <span className="flex items-center gap-1 text-xs text-orange-400">
+                      <span className="flex items-center gap-1 text-xs text-violet-400">
                         <AlertTriangle size={12} /> {r.blocked} blocked
                       </span>
                       <span className="flex items-center gap-1 text-xs text-slate-400">
@@ -233,7 +233,7 @@ function ReportsContent() {
                   {[
                     { key: 'passed', label: 'Passed', color: 'text-emerald-400' },
                     { key: 'failed', label: 'Failed', color: 'text-red-400' },
-                    { key: 'blocked', label: 'Blocked', color: 'text-orange-400' },
+                    { key: 'blocked', label: 'Blocked', color: 'text-violet-400' },
                     { key: 'skipped', label: 'Skipped', color: 'text-slate-400' },
                   ].map(({ key, label, color }) => (
                     <div key={key} className="glass-card p-3 text-center">

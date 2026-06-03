@@ -10,7 +10,7 @@ import {
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { href: '/',           label: 'Dashboard',   icon: LayoutDashboard, color: 'text-orange-500' },
+  { href: '/',           label: 'Dashboard',   icon: LayoutDashboard, color: 'text-violet-500' },
   { href: '/projects',   label: 'Projects',    icon: FolderKanban,    color: 'text-blue-500'   },
   { href: '/test-cases', label: 'Test Cases',  icon: ClipboardList,   color: 'text-sky-500'    },
   { href: '/reports',    label: 'Reports',     icon: FileBarChart2,   color: 'text-amber-500'  },
@@ -25,13 +25,13 @@ export default function Sidebar() {
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col z-40
-      bg-white border-r border-orange-100 shadow-sm shadow-orange-100/50
+      bg-white border-r border-violet-100 shadow-sm shadow-violet-100/50
       dark:bg-[#0c2040] dark:border-[#1a3355] dark:shadow-none">
 
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-orange-100 dark:border-[#1a3355]">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-blue-600
-          flex items-center justify-center shadow-lg shadow-orange-200 dark:shadow-orange-900/30">
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-violet-100 dark:border-[#1a3355]">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-blue-600
+          flex items-center justify-center shadow-lg shadow-violet-200 dark:shadow-violet-900/30">
           <Bug size={18} className="text-white" />
         </div>
         <div>
@@ -55,10 +55,10 @@ export default function Sidebar() {
             <Link key={href} href={href}>
               <div className={cn(isActive ? 'sidebar-link-active' : 'sidebar-link', 'group')}>
                 <Icon size={17}
-                  className={cn(isActive ? 'text-orange-600 dark:text-orange-400' : color, 'flex-shrink-0')} />
+                  className={cn(isActive ? 'text-violet-600 dark:text-violet-400' : color, 'flex-shrink-0')} />
                 <span className="flex-1">{label}</span>
                 {isActive && (
-                  <ChevronRight size={13} className="text-orange-400 dark:text-orange-500" />
+                  <ChevronRight size={13} className="text-violet-400 dark:text-violet-500" />
                 )}
               </div>
             </Link>
@@ -67,7 +67,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Bottom */}
-      <div className="px-3 py-4 border-t border-orange-100 dark:border-[#1a3355]">
+      <div className="px-3 py-4 border-t border-violet-100 dark:border-[#1a3355]">
         <Link href="/settings">
           <div className="sidebar-link">
             <Settings size={17} className="text-slate-400 dark:text-slate-500" />
@@ -75,7 +75,7 @@ export default function Sidebar() {
           </div>
         </Link>
         <div className="mt-3 px-3 py-3 rounded-xl
-          bg-gradient-to-r from-orange-50 to-blue-50 border border-orange-200
+          bg-gradient-to-r from-violet-50 to-blue-50 border border-violet-200
           dark:from-[#1a3355] dark:to-[#122240] dark:border-[#1e3d68]">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />

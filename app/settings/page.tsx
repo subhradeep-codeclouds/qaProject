@@ -29,7 +29,7 @@ const steps = [
     description: 'Copy .env.example to .env.local and fill in your Supabase credentials',
     code: 'cp .env.example .env.local',
     icon: Key,
-    color: 'from-orange-500 to-red-500',
+    color: 'from-violet-500 to-red-500',
   },
   {
     title: 'Start development server',
@@ -71,7 +71,7 @@ const integrations = [
       'Add client ID and secret to .env.local',
     ],
     icon: Calendar,
-    color: 'from-red-400 to-orange-500',
+    color: 'from-red-400 to-violet-500',
   },
 ]
 

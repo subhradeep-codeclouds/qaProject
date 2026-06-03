@@ -24,7 +24,7 @@ const STATUSES = ['open', 'in-progress', 'fixed', 'closed'] as const
 
 const SEV_STYLES = {
   critical: 'bg-red-500/20 text-red-400 border-red-500/30',
-  high:     'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  high:     'bg-violet-500/20 text-violet-400 border-violet-500/30',
   medium:   'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   low:      'bg-green-500/20 text-green-400 border-green-500/30',
 }
@@ -106,7 +106,7 @@ export default function BugsPage() {
             { label: 'Open', count: bugs.filter(b => b.status === 'open').length, color: 'text-red-400' },
             { label: 'In Progress', count: bugs.filter(b => b.status === 'in-progress').length, color: 'text-blue-400' },
             { label: 'Fixed', count: bugs.filter(b => b.status === 'fixed').length, color: 'text-emerald-400' },
-            { label: 'Critical', count: bugs.filter(b => b.severity === 'critical').length, color: 'text-orange-400' },
+            { label: 'Critical', count: bugs.filter(b => b.severity === 'critical').length, color: 'text-violet-400' },
           ].map(s => (
             <div key={s.label} className="glass-card p-4 text-center">
               <p className={cn('text-2xl font-bold', s.color)}>{s.count}</p>
@@ -146,7 +146,7 @@ export default function BugsPage() {
               <div key={bug.id} className="glass-card p-4 flex items-center gap-4 group">
                 <AlertTriangle size={16} className={cn(
                   bug.severity === 'critical' ? 'text-red-400' :
-                  bug.severity === 'high' ? 'text-orange-400' :
+                  bug.severity === 'high' ? 'text-violet-400' :
                   bug.severity === 'medium' ? 'text-yellow-400' : 'text-green-400'
                 )} />
                 <div className="flex-1 min-w-0">

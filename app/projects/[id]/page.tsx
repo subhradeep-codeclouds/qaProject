@@ -36,7 +36,7 @@ const ENV_CONFIG = {
 const SHEET_TYPE_CONFIG = {
   test_cases: { label: 'Test Cases', cls: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-500/30' },
   rtm:        { label: 'RTM',        cls: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30' },
-  regression: { label: 'Regression', cls: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-500/30' },
+  regression: { label: 'Regression', cls: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-500/30' },
   smoke:      { label: 'Smoke',      cls: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-500/20 dark:text-teal-300 dark:border-teal-500/30' },
   other:      { label: 'Other',      cls: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-500/20 dark:text-slate-400 dark:border-slate-500/30' },
 } as const
@@ -290,7 +290,7 @@ export default function ProjectDetailPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-screen">
-      <div className="w-8 h-8 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
+      <div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
     </div>
   )
 
@@ -360,7 +360,7 @@ export default function ProjectDetailPage() {
 
         {/* ── Credentials ────────────────────────────────────────────── */}
         <Section
-          icon={<Lock size={15} className="text-orange-500" />}
+          icon={<Lock size={15} className="text-violet-500" />}
           title="Credentials"
           count={credentials.length}
           onAdd={() => setShowCredModal(true)}
@@ -377,7 +377,7 @@ export default function ProjectDetailPage() {
             <div className="overflow-x-auto -mx-1">
               <table className="w-full min-w-[580px]">
                 <thead>
-                  <tr className="border-b border-orange-100 dark:border-[#1a3355]">
+                  <tr className="border-b border-violet-100 dark:border-[#1a3355]">
                     {['Title', 'Email / Username', 'Password', 'URL', ''].map(h => (
                       <th key={h} className="text-left text-[10px] uppercase font-bold tracking-wide text-slate-400 dark:text-slate-500 py-2 px-3 last:text-right">{h}</th>
                     ))}
@@ -388,12 +388,12 @@ export default function ProjectDetailPage() {
                     const isVisible   = visibleCreds.has(cred.id)
                     const safeCredUrl = sanitizeUrl(cred.url)
                     return (
-                      <tr key={cred.id} className="border-b border-orange-50 dark:border-[#1a3355]/40 hover:bg-orange-50/50 dark:hover:bg-[#0c2040]/50 transition-colors group">
+                      <tr key={cred.id} className="border-b border-violet-50 dark:border-[#1a3355]/40 hover:bg-violet-50/50 dark:hover:bg-[#0c2040]/50 transition-colors group">
 
                         {/* Title + notes */}
                         <td className="py-2.5 px-3 w-[22%]">
                           <div className="flex items-center gap-1.5">
-                            <Lock size={11} className="text-orange-400 flex-shrink-0" />
+                            <Lock size={11} className="text-violet-400 flex-shrink-0" />
                             <span className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[140px]">{cred.title}</span>
                           </div>
                           {cred.notes && (
@@ -407,7 +407,7 @@ export default function ProjectDetailPage() {
                             <div className="flex items-center gap-1">
                               <span className="font-mono text-xs text-slate-600 dark:text-slate-300 truncate max-w-[150px]">{cred.username}</span>
                               <button onClick={() => copyText(cred.username!, `u-${cred.id}`)}
-                                className="p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+                                className="p-1 rounded hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
                                 title="Copy email">
                                 {copied === `u-${cred.id}` ? <Check size={10} className="text-emerald-500" /> : <Copy size={10} className="text-slate-400" />}
                               </button>
@@ -423,12 +423,12 @@ export default function ProjectDetailPage() {
                                 {isVisible ? cred.password : '●●●●●●●●'}
                               </span>
                               <button onClick={() => toggleCredVisible(cred.id)}
-                                className="p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors flex-shrink-0"
+                                className="p-1 rounded hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors flex-shrink-0"
                                 title={isVisible ? 'Hide' : 'Show'}>
-                                {isVisible ? <EyeOff size={10} className="text-orange-400" /> : <Eye size={10} className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400" />}
+                                {isVisible ? <EyeOff size={10} className="text-violet-400" /> : <Eye size={10} className="text-slate-300 dark:text-slate-600 group-hover:text-slate-400" />}
                               </button>
                               <button onClick={() => copyText(cred.password!, `p-${cred.id}`)}
-                                className="p-1 rounded hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
+                                className="p-1 rounded hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
                                 title="Copy password">
                                 {copied === `p-${cred.id}` ? <Check size={10} className="text-emerald-500" /> : <Copy size={10} className="text-slate-400" />}
                               </button>
@@ -440,7 +440,7 @@ export default function ProjectDetailPage() {
                         <td className="py-2.5 px-3 w-[14%]">
                           {safeCredUrl ? (
                             <a href={safeCredUrl} target="_blank" rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-orange-500 hover:bg-orange-400 text-white transition-colors">
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-violet-500 hover:bg-violet-400 text-white transition-colors">
                               Go <ExternalLink size={9} />
                             </a>
                           ) : <span className="text-slate-300 dark:text-slate-700 text-xs">—</span>}
@@ -450,7 +450,7 @@ export default function ProjectDetailPage() {
                         <td className="py-2.5 px-3">
                           <div className="flex items-center justify-end gap-0.5">
                             <button onClick={() => openEditCred(cred)}
-                              className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                              className="p-1.5 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors opacity-0 group-hover:opacity-100"
                               title="Edit">
                               <Pencil size={12} className="text-slate-400" />
                             </button>
@@ -472,7 +472,7 @@ export default function ProjectDetailPage() {
 
         {/* ── Environment URLs ────────────────────────────────────────── */}
         <Section
-          icon={<Globe size={15} className="text-orange-500" />}
+          icon={<Globe size={15} className="text-violet-500" />}
           title="Environment URLs"
           count={projectUrls.length}
           onAdd={() => setShowUrlModal(true)}
@@ -484,7 +484,7 @@ export default function ProjectDetailPage() {
             <div className="overflow-x-auto -mx-1">
               <table className="w-full min-w-[440px]">
                 <thead>
-                  <tr className="border-b border-orange-100 dark:border-[#1a3355]">
+                  <tr className="border-b border-violet-100 dark:border-[#1a3355]">
                     {['Env', 'Label', 'URL', ''].map(h => (
                       <th key={h} className="text-left text-[10px] uppercase font-bold tracking-wide text-slate-400 dark:text-slate-500 py-2 px-3 last:text-right">{h}</th>
                     ))}
@@ -495,7 +495,7 @@ export default function ProjectDetailPage() {
                     const env     = ENV_CONFIG[pu.env] ?? ENV_CONFIG.custom
                     const safeUrl = sanitizeUrl(pu.url)
                     return (
-                      <tr key={pu.id} className="border-b border-orange-50 dark:border-[#1a3355]/40 hover:bg-orange-50/50 dark:hover:bg-[#0c2040]/50 transition-colors group">
+                      <tr key={pu.id} className="border-b border-violet-50 dark:border-[#1a3355]/40 hover:bg-violet-50/50 dark:hover:bg-[#0c2040]/50 transition-colors group">
                         <td className="py-2.5 px-3 w-[80px]">
                           <span className={cn('badge text-[10px] font-bold', env.cls)}>{env.label}</span>
                         </td>
@@ -516,11 +516,11 @@ export default function ProjectDetailPage() {
                               <a href={safeUrl} target="_blank" rel="noopener noreferrer"
                                 className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#1a3355] transition-colors opacity-0 group-hover:opacity-100"
                                 title="Open in new tab">
-                                <ExternalLink size={12} className="text-orange-500" />
+                                <ExternalLink size={12} className="text-violet-500" />
                               </a>
                             )}
                             <button onClick={() => openEditUrl(pu)}
-                              className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                              className="p-1.5 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors opacity-0 group-hover:opacity-100"
                               title="Edit">
                               <Pencil size={12} className="text-slate-400" />
                             </button>
@@ -542,7 +542,7 @@ export default function ProjectDetailPage() {
 
         {/* ── Test Sheets & RTM ───────────────────────────────────────── */}
         <Section
-          icon={<FileSpreadsheet size={15} className="text-orange-500" />}
+          icon={<FileSpreadsheet size={15} className="text-violet-500" />}
           title="Test Sheets & RTM"
           count={sheets.length}
           onAdd={() => setShowSheetModal(true)}
@@ -554,7 +554,7 @@ export default function ProjectDetailPage() {
             <div className="overflow-x-auto -mx-1">
               <table className="w-full min-w-[380px]">
                 <thead>
-                  <tr className="border-b border-orange-100 dark:border-[#1a3355]">
+                  <tr className="border-b border-violet-100 dark:border-[#1a3355]">
                     {['Type', 'Title', ''].map(h => (
                       <th key={h} className="text-left text-[10px] uppercase font-bold tracking-wide text-slate-400 dark:text-slate-500 py-2 px-3 last:text-right">{h}</th>
                     ))}
@@ -566,7 +566,7 @@ export default function ProjectDetailPage() {
                     const safeUrl  = sanitizeUrl(sheet.url)
                     const embedUrl = getGoogleSheetsEmbedUrl(sheet.url)
                     return (
-                      <tr key={sheet.id} className="border-b border-orange-50 dark:border-[#1a3355]/40 hover:bg-orange-50/50 dark:hover:bg-[#0c2040]/50 transition-colors group">
+                      <tr key={sheet.id} className="border-b border-violet-50 dark:border-[#1a3355]/40 hover:bg-violet-50/50 dark:hover:bg-[#0c2040]/50 transition-colors group">
                         <td className="py-2.5 px-3 w-[120px]">
                           <span className={cn('badge text-[10px]', type.cls)}>{type.label}</span>
                         </td>
@@ -577,7 +577,7 @@ export default function ProjectDetailPage() {
                           <div className="flex items-center justify-end gap-1">
                             {(safeUrl || embedUrl) && (
                               <button onClick={() => setViewSheetUrl(sheet.url)}
-                                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 border border-orange-200 dark:border-orange-500/30 transition-colors">
+                                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-500/20 border border-violet-200 dark:border-violet-500/30 transition-colors">
                                 <Eye size={10} /> Preview
                               </button>
                             )}
@@ -589,7 +589,7 @@ export default function ProjectDetailPage() {
                               </a>
                             )}
                             <button onClick={() => openEditSheet(sheet)}
-                              className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                              className="p-1.5 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors opacity-0 group-hover:opacity-100"
                               title="Edit">
                               <Pencil size={12} className="text-slate-400" />
                             </button>
@@ -611,7 +611,7 @@ export default function ProjectDetailPage() {
 
         {/* ── Test Cases preview ──────────────────────────────────────── */}
         <Section
-          icon={<ClipboardList size={15} className="text-orange-500" />}
+          icon={<ClipboardList size={15} className="text-violet-500" />}
           title="Test Cases"
           count={testCases.length}
           actionEl={
@@ -622,7 +622,7 @@ export default function ProjectDetailPage() {
             </Link>
           }
           footerEl={
-            <Link href={`/test-cases?project=${id}`} className="text-xs text-orange-500 hover:text-orange-400 font-medium transition-colors">
+            <Link href={`/test-cases?project=${id}`} className="text-xs text-violet-500 hover:text-violet-400 font-medium transition-colors">
               View all test cases →
             </Link>
           }
@@ -635,7 +635,7 @@ export default function ProjectDetailPage() {
                 const safeTcUrl  = sanitizeUrl(tc.sheet_url)
                 const embedTcUrl = tc.sheet_url ? getGoogleSheetsEmbedUrl(tc.sheet_url) : null
                 return (
-                  <div key={tc.id} className="flex items-center gap-3 p-3 rounded-xl border border-orange-50 dark:border-[#1a3355] bg-orange-50/30 dark:bg-[#0c2040]/30">
+                  <div key={tc.id} className="flex items-center gap-3 p-3 rounded-xl border border-violet-50 dark:border-[#1a3355] bg-violet-50/30 dark:bg-[#0c2040]/30">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{tc.title}</p>
                       <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{tc.category ?? 'Uncategorized'}</p>
@@ -645,7 +645,7 @@ export default function ProjectDetailPage() {
                       <span className={cn('badge text-[10px]', PRIORITY_STYLES[tc.priority])}>{tc.priority}</span>
                       {(safeTcUrl || embedTcUrl) && (
                         <button onClick={() => setViewSheetUrl(tc.sheet_url!)}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 border border-orange-200 dark:border-orange-500/30 transition-colors">
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-500/20 border border-violet-200 dark:border-violet-500/30 transition-colors">
                           <Eye size={10} /> Preview
                         </button>
                       )}
@@ -665,7 +665,7 @@ export default function ProjectDetailPage() {
 
         {/* ── Notes ──────────────────────────────────────────────────── */}
         <Section
-          icon={<StickyNote size={15} className="text-orange-500" />}
+          icon={<StickyNote size={15} className="text-violet-500" />}
           title="Notes"
           count={notes.length}
           onAdd={() => setShowNoteModal(true)}
@@ -676,7 +676,7 @@ export default function ProjectDetailPage() {
           ) : (
             <div className="space-y-2">
               {notes.map(note => (
-                <div key={note.id} className="flex items-start gap-3 p-3 rounded-xl border border-orange-50 dark:border-[#1a3355] bg-orange-50/30 dark:bg-[#0c2040]/30 group">
+                <div key={note.id} className="flex items-start gap-3 p-3 rounded-xl border border-violet-50 dark:border-[#1a3355] bg-violet-50/30 dark:bg-[#0c2040]/30 group">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{note.title}</p>
@@ -690,7 +690,7 @@ export default function ProjectDetailPage() {
                   </div>
                   <div className="flex items-center gap-0.5 flex-shrink-0">
                     <button onClick={() => openEditNote(note)}
-                      className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                      className="p-1.5 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors opacity-0 group-hover:opacity-100"
                       title="Edit">
                       <Pencil size={12} className="text-slate-400" />
                     </button>
@@ -708,7 +708,7 @@ export default function ProjectDetailPage() {
 
         {/* ── Reports preview ─────────────────────────────────────────── */}
         <Section
-          icon={<FileBarChart2 size={15} className="text-orange-500" />}
+          icon={<FileBarChart2 size={15} className="text-violet-500" />}
           title="Test Reports"
           count={reports.length}
           actionEl={
@@ -719,7 +719,7 @@ export default function ProjectDetailPage() {
             </Link>
           }
           footerEl={
-            <Link href={`/reports?project=${id}`} className="text-xs text-orange-500 hover:text-orange-400 font-medium transition-colors">
+            <Link href={`/reports?project=${id}`} className="text-xs text-violet-500 hover:text-violet-400 font-medium transition-colors">
               View all reports →
             </Link>
           }
@@ -743,7 +743,7 @@ export default function ProjectDetailPage() {
                     {[
                       { label: 'Passed',  val: r.passed,  cls: 'text-emerald-500 dark:text-emerald-400' },
                       { label: 'Failed',  val: r.failed,  cls: 'text-red-500 dark:text-red-400' },
-                      { label: 'Blocked', val: r.blocked, cls: 'text-orange-500 dark:text-orange-400' },
+                      { label: 'Blocked', val: r.blocked, cls: 'text-violet-500 dark:text-violet-400' },
                       { label: 'Skipped', val: r.skipped, cls: 'text-slate-400' },
                     ].map(s => (
                       <div key={s.label} className="text-center">
@@ -768,10 +768,10 @@ export default function ProjectDetailPage() {
       {/* ── Sheet viewer modal ─────────────────────────────────────────── */}
       {viewSheetUrl && (
         <div className="fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#122240] border border-orange-100 dark:border-[#1a3355] rounded-2xl shadow-2xl w-full max-w-5xl h-[82vh] flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-orange-100 dark:border-[#1a3355] flex-shrink-0">
+          <div className="bg-white dark:bg-[#122240] border border-violet-100 dark:border-[#1a3355] rounded-2xl shadow-2xl w-full max-w-5xl h-[82vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-violet-100 dark:border-[#1a3355] flex-shrink-0">
               <div className="flex items-center gap-2">
-                <FileSpreadsheet size={15} className="text-orange-500" />
+                <FileSpreadsheet size={15} className="text-violet-500" />
                 <span className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Sheet Preview</span>
               </div>
               <div className="flex items-center gap-2">
@@ -787,7 +787,7 @@ export default function ProjectDetailPage() {
                 )}
                 <button
                   onClick={() => setViewSheetUrl(null)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-orange-50 dark:hover:bg-[#1a3355] transition-colors"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-violet-50 dark:hover:bg-[#1a3355] transition-colors"
                 >
                   <X size={15} className="text-slate-400" />
                 </button>
@@ -832,8 +832,20 @@ export default function ProjectDetailPage() {
                 placeholder="••••••••" type="password" className="input-field" autoComplete="new-password" />
             </Field>
             <Field label="URL (optional)">
-              <input value={credForm.url} onChange={e => setCredForm(f => ({ ...f, url: e.target.value }))}
-                placeholder="https://app.example.com/login" className="input-field" />
+              <div className="flex gap-2">
+                <input value={credForm.url} onChange={e => setCredForm(f => ({ ...f, url: e.target.value }))}
+                  placeholder="https://app.example.com/login" className="input-field flex-1" />
+                {sanitizeUrl(credForm.url) && (
+                  <a
+                    href={sanitizeUrl(credForm.url)!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-50 hover:bg-violet-100 border border-violet-200 text-violet-700 text-xs font-semibold transition-colors flex-shrink-0 dark:bg-violet-500/10 dark:border-violet-500/30 dark:text-violet-300 dark:hover:bg-violet-500/20"
+                  >
+                    <ExternalLink size={13} /> Open
+                  </a>
+                )}
+              </div>
             </Field>
             <Field label="Notes (optional)">
               <textarea value={credForm.notes} onChange={e => setCredForm(f => ({ ...f, notes: e.target.value }))}
@@ -856,7 +868,7 @@ export default function ProjectDetailPage() {
                     className={cn('px-3 py-1.5 rounded-xl text-xs font-bold border transition-all',
                       urlForm.env === env
                         ? cn(ENV_CONFIG[env].cls, 'scale-105')
-                        : 'border-slate-200 dark:border-[#1a3355] text-slate-500 dark:text-slate-400 hover:border-orange-200 dark:hover:border-orange-500/40'
+                        : 'border-slate-200 dark:border-[#1a3355] text-slate-500 dark:text-slate-400 hover:border-violet-200 dark:hover:border-violet-500/40'
                     )}
                   >
                     {ENV_CONFIG[env].label}
@@ -889,7 +901,7 @@ export default function ProjectDetailPage() {
                     className={cn('px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all',
                       sheetForm.type === t
                         ? cn(SHEET_TYPE_CONFIG[t].cls, 'scale-105')
-                        : 'border-slate-200 dark:border-[#1a3355] text-slate-500 dark:text-slate-400 hover:border-orange-200 dark:hover:border-orange-500/40'
+                        : 'border-slate-200 dark:border-[#1a3355] text-slate-500 dark:text-slate-400 hover:border-violet-200 dark:hover:border-violet-500/40'
                     )}
                   >
                     {SHEET_TYPE_CONFIG[t].label}
@@ -956,7 +968,7 @@ function Section({
     <div className="card p-5 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-xl bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center">
             {icon}
           </div>
           <h3 className="font-bold text-slate-800 dark:text-slate-100">{title}</h3>
@@ -975,7 +987,7 @@ function Section({
       {children}
 
       {footerEl && (
-        <div className="pt-1 border-t border-orange-50 dark:border-[#1a3355]">
+        <div className="pt-1 border-t border-violet-50 dark:border-[#1a3355]">
           {footerEl}
         </div>
       )}
@@ -1003,15 +1015,15 @@ function Modal({
 }) {
   return (
     <div className="fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-[#122240] border border-orange-100 dark:border-[#1a3355] rounded-2xl shadow-2xl w-full max-w-md animate-slide-up">
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-orange-50 dark:border-[#1a3355]">
+      <div className="bg-white dark:bg-[#122240] border border-violet-100 dark:border-[#1a3355] rounded-2xl shadow-2xl w-full max-w-md animate-slide-up">
+        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-violet-50 dark:border-[#1a3355]">
           <div>
             <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">{title}</h3>
             {sub && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{sub}</p>}
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-orange-50 dark:hover:bg-[#1a3355] transition-colors"
+            className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-violet-50 dark:hover:bg-[#1a3355] transition-colors"
           >
             <X size={14} className="text-slate-400" />
           </button>

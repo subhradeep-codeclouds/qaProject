@@ -50,7 +50,7 @@ export default function StandupPage() {
         {/* Today's standup form */}
         <div className="glass-card p-6">
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg shadow-yellow-500/25">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-violet-500 flex items-center justify-center shadow-lg shadow-yellow-500/25">
               <Zap size={18} className="text-white" />
             </div>
             <div>

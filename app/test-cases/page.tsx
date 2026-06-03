@@ -14,7 +14,7 @@ const STATUSES = ['pending', 'pass', 'fail', 'blocked', 'skipped'] as const
 const emptyForm = {
   title: '',
   project_id: '',
-  sheet_url: '',
+  description: '',   // stores the Google Sheet URL
   status: 'pending' as const,
   priority: 'medium' as const,
 }
@@ -49,13 +49,19 @@ function TestCasesContent() {
   }
 
   async function saveTestCase() {
-    if (!form.title.trim())   return toast.error('Name is required')
-    if (!form.project_id)     return toast.error('Select a project')
-    if (!form.sheet_url.trim()) return toast.error('Google Sheet URL is required')
-    const safeUrl = sanitizeUrl(form.sheet_url)
+    if (!form.title.trim())       return toast.error('Name is required')
+    if (!form.project_id)         return toast.error('Select a project')
+    if (!form.description.trim()) return toast.error('Google Sheet URL is required')
+    const safeUrl = sanitizeUrl(form.description)
     if (!safeUrl) return toast.error('URL must start with http:// or https://')
     setSaving(true)
-    const payload = { ...form, sheet_url: safeUrl }
+    const payload = {
+      title:      form.title.trim(),
+      project_id: form.project_id,
+      description: safeUrl,
+      status:     form.status,
+      priority:   form.priority,
+    }
     const { error } = await supabase.from('test_cases').insert([payload])
     setSaving(false)
     if (error) return toast.error('Failed to save test case')
@@ -101,7 +107,7 @@ function TestCasesContent() {
                 <p className="text-xl font-bold text-white">{count}</p>
                 <p className={cn('text-[10px] font-medium capitalize mt-0.5',
                   s === 'pass' ? 'text-emerald-400' : s === 'fail' ? 'text-red-400' :
-                  s === 'blocked' ? 'text-orange-400' : s === 'skipped' ? 'text-slate-400' :
+                  s === 'blocked' ? 'text-violet-400' : s === 'skipped' ? 'text-slate-400' :
                   s === 'pending' ? 'text-blue-400' : 'text-slate-300')}>
                   {s === 'all' ? 'Total' : s}
                 </p>
@@ -140,19 +146,20 @@ function TestCasesContent() {
         ) : (
           <div className="space-y-2">
             {filtered.map(tc => {
-              const safeTcUrl  = sanitizeUrl(tc.sheet_url)
-              const embedTcUrl = tc.sheet_url ? getGoogleSheetsEmbedUrl(tc.sheet_url) : null
+              const sheetUrl   = tc.description   // URL stored in description field
+              const safeTcUrl  = sanitizeUrl(sheetUrl)
+              const embedTcUrl = sheetUrl ? getGoogleSheetsEmbedUrl(sheetUrl) : null
               return (
                 <div key={tc.id} className="glass-card group">
                   <div className="p-4 flex items-center gap-4">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{tc.title}</p>
+                      <p className="text-sm font-medium text-slate-800 dark:text-white truncate">{tc.title}</p>
                       <span className="text-xs text-slate-500">{projectName(tc.project_id)}</span>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {(safeTcUrl || embedTcUrl) && (
-                        <button onClick={() => setViewUrl(tc.sheet_url!)}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-orange-500/20 text-orange-300 hover:bg-orange-500/30 border border-orange-500/30 transition-colors">
+                        <button onClick={() => setViewUrl(sheetUrl!)}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 border border-violet-500/30 transition-colors">
                           <Eye size={11} /> Preview
                         </button>
                       )}
@@ -218,8 +225,8 @@ function TestCasesContent() {
       {/* Sheet preview modal */}
       {viewUrl && (
         <div className="fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#122240] border border-orange-100 dark:border-[#1a3355] rounded-2xl shadow-2xl w-full max-w-5xl h-[82vh] flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-orange-100 dark:border-[#1a3355] flex-shrink-0">
+          <div className="bg-white dark:bg-[#122240] border border-violet-100 dark:border-[#1a3355] rounded-2xl shadow-2xl w-full max-w-5xl h-[82vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-violet-100 dark:border-[#1a3355] flex-shrink-0">
               <span className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Sheet Preview</span>
               <div className="flex items-center gap-2">
                 {sanitizeUrl(viewUrl) && (
@@ -229,7 +236,7 @@ function TestCasesContent() {
                   </a>
                 )}
                 <button onClick={() => setViewUrl(null)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-orange-50 dark:hover:bg-[#1a3355] transition-colors">
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-violet-50 dark:hover:bg-[#1a3355] transition-colors">
                   <span className="text-slate-400 text-lg leading-none">×</span>
                 </button>
               </div>

@@ -351,7 +351,7 @@ export default function LoginPage() {
 
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-6 animate-fade-slide-up" style={{ animationFillMode:'forwards' }}>
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-blue-600 flex items-center justify-center mx-auto mb-3 shadow-xl shadow-orange-200 animate-pulse-ring">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center mx-auto mb-3 shadow-xl shadow-violet-200 animate-pulse-ring">
               <Bug size={24} className="text-white" />
             </div>
             <h1 className="text-lg font-black text-slate-800">Subhradeep Task Management</h1>
@@ -359,7 +359,7 @@ export default function LoginPage() {
           </div>
 
           {/* ── Card ── */}
-          <div className="bg-white/80 backdrop-blur-2xl rounded-3xl border border-orange-100 p-8 animate-fade-slide-left"
+          <div className="bg-white/80 backdrop-blur-2xl rounded-3xl border border-violet-100 p-8 animate-fade-slide-left"
             style={{ animationFillMode:'forwards', boxShadow:'0 8px 60px rgba(249,115,22,0.12), 0 2px 8px rgba(59,130,246,0.08)' }}>
 
             {success ? (
@@ -375,10 +375,10 @@ export default function LoginPage() {
               <>
                 {/* Greeting + shimmer badge */}
                 <div className="animate-fade-slide-up delay-100" style={{ animationFillMode:'forwards' }}>
-                  <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-5 border border-orange-200"
+                  <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-5 border border-violet-200"
                     style={{ background:'linear-gradient(90deg,#fff7ed,#fffbf5,#fff7ed)', backgroundSize:'200% auto' }}>
                     <span className="text-base">{theme.emoji}</span>
-                    <span className="text-xs font-black text-orange-600 tracking-wide">{theme.greet}!</span>
+                    <span className="text-xs font-black text-violet-600 tracking-wide">{theme.greet}!</span>
                   </div>
 
                   <h2 className="text-[26px] font-black text-slate-800 leading-tight mb-2">
@@ -418,7 +418,7 @@ export default function LoginPage() {
                           autoFocus
                         />
                         <button type="button" onClick={() => setShowPassword(s=>!s)}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-500 transition-colors">
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-violet-500 transition-colors">
                           {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                         </button>
                       </div>

@@ -98,7 +98,7 @@ export default function ProjectsPage() {
             </div>
 
             {/* Status filter */}
-            <div className="flex items-center gap-1 bg-white dark:bg-[#122240] border border-orange-100 dark:border-[#1a3355] rounded-xl p-1">
+            <div className="flex items-center gap-1 bg-white dark:bg-[#122240] border border-violet-100 dark:border-[#1a3355] rounded-xl p-1">
               {['all', ...STATUS_OPTIONS].map(s => (
                 <button
                   key={s}
@@ -106,7 +106,7 @@ export default function ProjectsPage() {
                   className={cn(
                     'px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all',
                     filterStatus === s
-                      ? 'bg-gradient-to-r from-orange-500 to-blue-600 text-white shadow-sm'
+                      ? 'bg-gradient-to-r from-violet-500 to-blue-600 text-white shadow-sm'
                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   )}
                 >
@@ -158,17 +158,17 @@ export default function ProjectsPage() {
       {/* Create Project Modal */}
       {showModal && (
         <div className="fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#122240] border border-orange-100 dark:border-[#1a3355] rounded-2xl shadow-2xl w-full max-w-md animate-slide-up">
+          <div className="bg-white dark:bg-[#122240] border border-violet-100 dark:border-[#1a3355] rounded-2xl shadow-2xl w-full max-w-md animate-slide-up">
 
             {/* Modal header */}
-            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-orange-50 dark:border-[#1a3355]">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-violet-50 dark:border-[#1a3355]">
               <div>
                 <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Create New Project</h3>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Fill in the details below</p>
               </div>
               <button
                 onClick={closeModal}
-                className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-orange-50 dark:hover:bg-[#1a3355] transition-colors"
+                className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-violet-50 dark:hover:bg-[#1a3355] transition-colors"
               >
                 <X size={15} className="text-slate-400" />
               </button>
@@ -212,8 +212,8 @@ export default function ProjectsPage() {
                       className={cn(
                         'flex-1 py-2 rounded-xl text-xs font-semibold border transition-all',
                         form.status === s
-                          ? 'border-orange-400 bg-orange-50 dark:bg-orange-500/15 text-orange-700 dark:text-orange-300'
-                          : 'border-slate-200 dark:border-[#1a3355] text-slate-500 dark:text-slate-400 hover:border-orange-200 dark:hover:border-orange-500/40'
+                          ? 'border-violet-400 bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300'
+                          : 'border-slate-200 dark:border-[#1a3355] text-slate-500 dark:text-slate-400 hover:border-violet-200 dark:hover:border-violet-500/40'
                       )}
                     >
                       {STATUS_LABELS[s]}
