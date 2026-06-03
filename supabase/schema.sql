@@ -133,6 +133,16 @@ CREATE TABLE IF NOT EXISTS project_sheets (
   created_at   TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Project notes
+CREATE TABLE IF NOT EXISTS project_notes (
+  id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  title      TEXT NOT NULL,
+  date       DATE DEFAULT CURRENT_DATE,
+  note       TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ===========================
 -- Row Level Security
 -- Enable RLS on all tables so only authenticated sessions can access data.
@@ -141,6 +151,7 @@ CREATE TABLE IF NOT EXISTS project_sheets (
 -- policies using auth.uid().
 -- ===========================
 
+ALTER TABLE project_notes       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE projects            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_resources   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_credentials ENABLE ROW LEVEL SECURITY;
@@ -151,6 +162,7 @@ ALTER TABLE test_reports        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bugs                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE standup_notes       ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "portal_all" ON project_notes       FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "portal_all" ON projects            FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "portal_all" ON project_resources   FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "portal_all" ON project_credentials FOR ALL USING (true) WITH CHECK (true);

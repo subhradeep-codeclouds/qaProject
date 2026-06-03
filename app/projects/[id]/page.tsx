@@ -6,7 +6,7 @@ import Header from '@/components/Header'
 import {
   ArrowLeft, Plus, Lock, Globe, FileSpreadsheet, ClipboardList,
   FileBarChart2, Trash2, Eye, EyeOff, ExternalLink, Copy, X,
-  ShieldCheck, AlertTriangle, Check, Pencil,
+  ShieldCheck, AlertTriangle, Check, Pencil, StickyNote,
 } from 'lucide-react'
 import {
   supabase,
@@ -16,6 +16,7 @@ import {
   type ProjectSheet,
   type TestCase,
   type TestReport,
+  type ProjectNote,
 } from '@/lib/supabase'
 import { cn, getProjectGradient, formatDate, STATUS_STYLES, PRIORITY_STYLES } from '@/lib/utils'
 import { sanitizeUrl, getGoogleSheetsEmbedUrl } from '@/lib/security'
@@ -52,6 +53,7 @@ export default function ProjectDetailPage() {
   const [sheets,      setSheets]      = useState<ProjectSheet[]>([])
   const [testCases,   setTestCases]   = useState<TestCase[]>([])
   const [reports,     setReports]     = useState<TestReport[]>([])
+  const [notes,       setNotes]       = useState<ProjectNote[]>([])
   const [loading,     setLoading]     = useState(true)
 
   // Visible credential passwords (stored by id)
@@ -66,29 +68,33 @@ export default function ProjectDetailPage() {
   const [showCredModal,  setShowCredModal]  = useState(false)
   const [showUrlModal,   setShowUrlModal]   = useState(false)
   const [showSheetModal, setShowSheetModal] = useState(false)
+  const [showNoteModal,  setShowNoteModal]  = useState(false)
   const [saving,         setSaving]         = useState(false)
 
   // Forms
   const [credForm,  setCredForm]  = useState({ title: '', username: '', password: '', url: '', notes: '' })
   const [urlForm,   setUrlForm]   = useState({ label: '', url: '', env: 'dev' as ProjectUrl['env'] })
   const [sheetForm, setSheetForm] = useState({ title: '', url: '', type: 'test_cases' as ProjectSheet['type'] })
+  const [noteForm,  setNoteForm]  = useState({ title: '', date: new Date().toISOString().slice(0, 10), note: '' })
 
   // Edit tracking — null = add mode, string = edit mode (the item's id)
   const [editingCredId,  setEditingCredId]  = useState<string | null>(null)
   const [editingUrlId,   setEditingUrlId]   = useState<string | null>(null)
   const [editingSheetId, setEditingSheetId] = useState<string | null>(null)
+  const [editingNoteId,  setEditingNoteId]  = useState<string | null>(null)
 
   // ── Fetch ────────────────────────────────────────────────────────────────
 
   const fetchData = useCallback(async () => {
     if (!id) return
-    const [projRes, credRes, urlRes, sheetRes, tcRes, repRes] = await Promise.all([
+    const [projRes, credRes, urlRes, sheetRes, tcRes, repRes, noteRes] = await Promise.all([
       supabase.from('projects').select('*').eq('id', id).single(),
       supabase.from('project_credentials').select('*').eq('project_id', id).order('created_at'),
       supabase.from('project_urls').select('*').eq('project_id', id).order('env').order('created_at'),
       supabase.from('project_sheets').select('*').eq('project_id', id).order('type').order('created_at'),
       supabase.from('test_cases').select('*').eq('project_id', id).order('created_at', { ascending: false }).limit(5),
       supabase.from('test_reports').select('*').eq('project_id', id).order('test_date', { ascending: false }).limit(3),
+      supabase.from('project_notes').select('*').eq('project_id', id).order('date', { ascending: false }),
     ])
     if (projRes.data)  setProject(projRes.data)
     if (credRes.data)  setCredentials(credRes.data)
@@ -96,6 +102,7 @@ export default function ProjectDetailPage() {
     if (sheetRes.data) setSheets(sheetRes.data)
     if (tcRes.data)    setTestCases(tcRes.data)
     if (repRes.data)   setReports(repRes.data)
+    if (noteRes.data)  setNotes(noteRes.data)
     setLoading(false)
   }, [id])
 
@@ -135,6 +142,11 @@ export default function ProjectDetailPage() {
     setShowSheetModal(false)
     setEditingSheetId(null)
     setSheetForm({ title: '', url: '', type: 'test_cases' })
+  }
+  function closeNoteModal() {
+    setShowNoteModal(false)
+    setEditingNoteId(null)
+    setNoteForm({ title: '', date: new Date().toISOString().slice(0, 10), note: '' })
   }
 
   // ── CRUD ─────────────────────────────────────────────────────────────────
@@ -241,6 +253,39 @@ export default function ProjectDetailPage() {
     setSheets(prev => prev.filter(s => s.id !== sheetId))
   }
 
+  // ── Note CRUD ────────────────────────────────────────────────────────────
+
+  function openEditNote(note: ProjectNote) {
+    setNoteForm({ title: note.title, date: note.date, note: note.note ?? '' })
+    setEditingNoteId(note.id)
+    setShowNoteModal(true)
+  }
+
+  async function saveNote() {
+    if (!noteForm.title.trim()) return toast.error('Title is required')
+    if (!noteForm.date)         return toast.error('Date is required')
+    setSaving(true)
+    const payload = {
+      title: noteForm.title.trim(),
+      date:  noteForm.date,
+      note:  noteForm.note.trim() || null,
+    }
+    const { error } = editingNoteId
+      ? await supabase.from('project_notes').update(payload).eq('id', editingNoteId)
+      : await supabase.from('project_notes').insert([{ ...payload, project_id: id }])
+    setSaving(false)
+    if (error) return toast.error(error.message || 'Failed to save note')
+    toast.success(editingNoteId ? 'Note updated!' : 'Note saved!')
+    closeNoteModal()
+    fetchData()
+  }
+
+  async function deleteNote(noteId: string) {
+    await supabase.from('project_notes').delete().eq('id', noteId)
+    toast.success('Note deleted')
+    setNotes(prev => prev.filter(n => n.id !== noteId))
+  }
+
   // ── Loading / not found ──────────────────────────────────────────────────
 
   if (loading) return (
@@ -299,6 +344,7 @@ export default function ProjectDetailPage() {
                   { n: sheets.length,      label: 'sheets' },
                   { n: testCases.length,   label: 'test cases' },
                   { n: reports.length,     label: 'reports' },
+                  { n: notes.length,       label: 'notes' },
                 ].map(({ n, label }) => (
                   <span key={label} className="text-xs text-slate-400 dark:text-slate-500">
                     <strong className="text-slate-700 dark:text-slate-300 font-bold">{n}</strong> {label}
@@ -528,18 +574,18 @@ export default function ProjectDetailPage() {
                           <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{sheet.title}</span>
                         </td>
                         <td className="py-2.5 px-3">
-                          <div className="flex items-center justify-end gap-0.5">
+                          <div className="flex items-center justify-end gap-1">
                             {(safeUrl || embedUrl) && (
                               <button onClick={() => setViewSheetUrl(sheet.url)}
                                 className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 border border-orange-200 dark:border-orange-500/30 transition-colors">
-                                <Eye size={10} /> View
+                                <Eye size={10} /> Preview
                               </button>
                             )}
                             {safeUrl && (
                               <a href={safeUrl} target="_blank" rel="noopener noreferrer"
-                                className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#1a3355] transition-colors opacity-0 group-hover:opacity-100"
+                                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 dark:bg-[#1a3355] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1e3d66] border border-slate-200 dark:border-[#1a3355] transition-colors"
                                 title="Open in new tab">
-                                <ExternalLink size={12} className="text-orange-500" />
+                                <ExternalLink size={10} /> Open
                               </a>
                             )}
                             <button onClick={() => openEditSheet(sheet)}
@@ -593,6 +639,49 @@ export default function ProjectDetailPage() {
                   </div>
                   <span className={cn('badge text-[10px]', STATUS_STYLES[tc.status])}>{tc.status}</span>
                   <span className={cn('badge text-[10px]', PRIORITY_STYLES[tc.priority])}>{tc.priority}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Section>
+
+        {/* ── Notes ──────────────────────────────────────────────────── */}
+        <Section
+          icon={<StickyNote size={15} className="text-orange-500" />}
+          title="Notes"
+          count={notes.length}
+          onAdd={() => setShowNoteModal(true)}
+          addLabel="Add Note"
+        >
+          {notes.length === 0 ? (
+            <EmptyState icon={<StickyNote size={28} />} message="No notes yet." sub="Add notes, observations or reminders for this project." />
+          ) : (
+            <div className="space-y-2">
+              {notes.map(note => (
+                <div key={note.id} className="flex items-start gap-3 p-3 rounded-xl border border-orange-50 dark:border-[#1a3355] bg-orange-50/30 dark:bg-[#0c2040]/30 group">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{note.title}</p>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-[#1a3355] px-2 py-0.5 rounded-full">
+                        {formatDate(note.date)}
+                      </span>
+                    </div>
+                    {note.note && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">{note.note}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <button onClick={() => openEditNote(note)}
+                      className="p-1.5 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors opacity-0 group-hover:opacity-100"
+                      title="Edit">
+                      <Pencil size={12} className="text-slate-400" />
+                    </button>
+                    <button onClick={() => deleteNote(note.id)}
+                      className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors opacity-0 group-hover:opacity-100"
+                      title="Delete">
+                      <Trash2 size={12} className="text-red-400" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -803,6 +892,27 @@ export default function ProjectDetailPage() {
             </Field>
           </div>
           <ModalFooter onCancel={closeSheetModal} onSave={saveSheet} saving={saving} saveLabel={editingSheetId ? 'Save Changes' : 'Save Sheet'} />
+        </Modal>
+      )}
+
+      {/* ── Add Note modal ─────────────────────────────────────────────── */}
+      {showNoteModal && (
+        <Modal title={editingNoteId ? 'Edit Note' : 'Add Note'} onClose={closeNoteModal}>
+          <div className="space-y-3">
+            <Field label="Title *">
+              <input value={noteForm.title} onChange={e => setNoteForm(f => ({ ...f, title: e.target.value }))}
+                placeholder="e.g. Sprint 3 observations" className="input-field" autoFocus />
+            </Field>
+            <Field label="Date *">
+              <input type="date" value={noteForm.date} onChange={e => setNoteForm(f => ({ ...f, date: e.target.value }))}
+                className="input-field" />
+            </Field>
+            <Field label="Note">
+              <textarea value={noteForm.note} onChange={e => setNoteForm(f => ({ ...f, note: e.target.value }))}
+                placeholder="Write your note here..." rows={4} className="input-field resize-none" />
+            </Field>
+          </div>
+          <ModalFooter onCancel={closeNoteModal} onSave={saveNote} saving={saving} saveLabel={editingNoteId ? 'Save Changes' : 'Save Note'} />
         </Modal>
       )}
     </div>

@@ -94,3 +94,12 @@ export type ProjectSheet = {
   type: 'test_cases' | 'rtm' | 'regression' | 'smoke' | 'other'
   created_at: string
 }
+
+export type ProjectNote = {
+  id: string
+  project_id: string
+  title: string
+  date: string
+  note: string | null
+  created_at: string
+}
