@@ -208,7 +208,7 @@ function TestCasesContent() {
               </div>
               <div>
                 <label className="label">Google Sheet URL *</label>
-                <input value={form.sheet_url} onChange={e => setForm(f => ({ ...f, sheet_url: e.target.value }))}
+                <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   placeholder="https://docs.google.com/spreadsheets/d/..." className="input-field" />
               </div>
             </div>
