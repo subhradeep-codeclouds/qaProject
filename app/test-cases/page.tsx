@@ -6,6 +6,7 @@ import Header from '@/components/Header'
 import { Plus, ClipboardList, Search, Filter, Trash2, Edit2, CheckCircle2 } from 'lucide-react'
 import { supabase, type TestCase, type Project } from '@/lib/supabase'
 import { cn, STATUS_STYLES, PRIORITY_STYLES, formatDate } from '@/lib/utils'
+import { sanitizeUrl } from '@/lib/security'
 import toast from 'react-hot-toast'
 
 const STATUSES = ['pending', 'pass', 'fail', 'blocked', 'skipped'] as const
@@ -14,6 +15,7 @@ const PRIORITIES = ['low', 'medium', 'high', 'critical'] as const
 const emptyForm = {
   title: '', description: '', steps: '', expected_result: '', actual_result: '',
   status: 'pending' as const, priority: 'medium' as const, category: '', project_id: '',
+  sheet_url: '',
 }
 
 function TestCasesContent() {
@@ -47,7 +49,11 @@ function TestCasesContent() {
     if (!form.title.trim()) return toast.error('Title is required')
     if (!form.project_id) return toast.error('Select a project')
     setSaving(true)
-    const { error } = await supabase.from('test_cases').insert([form])
+    const payload = {
+      ...form,
+      sheet_url: form.sheet_url.trim() ? (sanitizeUrl(form.sheet_url) ?? null) : null,
+    }
+    const { error } = await supabase.from('test_cases').insert([payload])
     setSaving(false)
     if (error) return toast.error('Failed to save test case')
     toast.success('Test case added!')
@@ -226,6 +232,11 @@ function TestCasesContent() {
                 <label className="label">Actual Result</label>
                 <textarea value={form.actual_result} onChange={e => setForm(f => ({ ...f, actual_result: e.target.value }))}
                   placeholder="Leave blank if not tested yet" rows={3} className="input-field resize-none" />
+              </div>
+              <div className="col-span-2">
+                <label className="label">Google Sheet URL (optional)</label>
+                <input value={form.sheet_url} onChange={e => setForm(f => ({ ...f, sheet_url: e.target.value }))}
+                  placeholder="https://docs.google.com/spreadsheets/d/..." className="input-field" />
               </div>
             </div>
             <div className="flex gap-3 mt-6">

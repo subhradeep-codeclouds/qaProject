@@ -36,6 +36,7 @@ export type TestCase = {
   status: 'pending' | 'pass' | 'fail' | 'blocked' | 'skipped'
   priority: 'low' | 'medium' | 'high' | 'critical'
   category: string | null
+  sheet_url: string | null
   created_at: string
   updated_at: string
 }

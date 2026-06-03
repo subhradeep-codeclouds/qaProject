@@ -631,16 +631,34 @@ export default function ProjectDetailPage() {
             <EmptyState icon={<ClipboardList size={28} />} message="No test cases yet." />
           ) : (
             <div className="space-y-2">
-              {testCases.map(tc => (
-                <div key={tc.id} className="flex items-center gap-3 p-3 rounded-xl border border-orange-50 dark:border-[#1a3355] bg-orange-50/30 dark:bg-[#0c2040]/30">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{tc.title}</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{tc.category ?? 'Uncategorized'}</p>
+              {testCases.map(tc => {
+                const safeTcUrl  = sanitizeUrl(tc.sheet_url)
+                const embedTcUrl = tc.sheet_url ? getGoogleSheetsEmbedUrl(tc.sheet_url) : null
+                return (
+                  <div key={tc.id} className="flex items-center gap-3 p-3 rounded-xl border border-orange-50 dark:border-[#1a3355] bg-orange-50/30 dark:bg-[#0c2040]/30">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{tc.title}</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{tc.category ?? 'Uncategorized'}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className={cn('badge text-[10px]', STATUS_STYLES[tc.status])}>{tc.status}</span>
+                      <span className={cn('badge text-[10px]', PRIORITY_STYLES[tc.priority])}>{tc.priority}</span>
+                      {(safeTcUrl || embedTcUrl) && (
+                        <button onClick={() => setViewSheetUrl(tc.sheet_url!)}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-500/20 border border-orange-200 dark:border-orange-500/30 transition-colors">
+                          <Eye size={10} /> Preview
+                        </button>
+                      )}
+                      {safeTcUrl && (
+                        <a href={safeTcUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 dark:bg-[#1a3355] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1e3d66] border border-slate-200 dark:border-[#1a3355] transition-colors">
+                          <ExternalLink size={10} /> Open
+                        </a>
+                      )}
+                    </div>
                   </div>
-                  <span className={cn('badge text-[10px]', STATUS_STYLES[tc.status])}>{tc.status}</span>
-                  <span className={cn('badge text-[10px]', PRIORITY_STYLES[tc.priority])}>{tc.priority}</span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </Section>

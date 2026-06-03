@@ -133,6 +133,9 @@ CREATE TABLE IF NOT EXISTS project_sheets (
   created_at   TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Add sheet_url to test_cases (run if table already exists)
+ALTER TABLE test_cases ADD COLUMN IF NOT EXISTS sheet_url TEXT;
+
 -- Project notes
 CREATE TABLE IF NOT EXISTS project_notes (
   id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
