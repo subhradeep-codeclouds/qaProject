@@ -302,20 +302,12 @@ export default function ProjectDetailPage() {
     setUploading(true)
     let successCount = 0
     await Promise.all(Array.from(files).map(async (file) => {
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-      const path = `${id}/${Date.now()}-${safeName}`
-      const { error: storageErr } = await supabase.storage
-        .from('project-attachments')
-        .upload(path, file)
-      if (storageErr) { toast.error(`Upload failed: ${storageErr.message}`); return }
-      const { error: dbErr } = await supabase.from('project_attachments').insert([{
-        project_id: id,
-        name: file.name,
-        storage_path: path,
-        size: file.size,
-        mime_type: file.type || null,
-      }])
-      if (dbErr) toast.error(`Metadata save failed: ${file.name}`)
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('projectId', id)
+      const res = await fetch('/api/attachments/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (!res.ok) toast.error(`Upload failed: ${data.error ?? file.name}`)
       else successCount++
     }))
     setUploading(false)
@@ -327,21 +319,27 @@ export default function ProjectDetailPage() {
 
   async function downloadAttachment(att: ProjectAttachment) {
     const toastId = toast.loading(`Downloading ${att.name}…`)
-    const { data, error } = await supabase.storage
-      .from('project-attachments')
-      .download(att.storage_path)
+    const res = await fetch('/api/attachments/signed-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storagePath: att.storage_path }),
+    })
     toast.dismiss(toastId)
-    if (error) return toast.error('Download failed')
-    const url = URL.createObjectURL(data)
+    if (!res.ok) return toast.error('Download failed')
+    const { signedUrl } = await res.json()
     const a = document.createElement('a')
-    a.href = url; a.download = att.name
+    a.href = signedUrl; a.download = att.name
     document.body.appendChild(a); a.click()
-    document.body.removeChild(a); URL.revokeObjectURL(url)
+    document.body.removeChild(a)
   }
 
   async function deleteAttachment(att: ProjectAttachment) {
-    await supabase.storage.from('project-attachments').remove([att.storage_path])
-    await supabase.from('project_attachments').delete().eq('id', att.id)
+    const res = await fetch('/api/attachments/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: att.id, storagePath: att.storage_path }),
+    })
+    if (!res.ok) { toast.error('Delete failed'); return }
     toast.success('File deleted')
     setAttachments(prev => prev.filter(a => a.id !== att.id))
   }
@@ -1116,9 +1114,13 @@ function AttachmentCard({
 
   useEffect(() => {
     if (!isImage) return
-    supabase.storage.from('project-attachments')
-      .createSignedUrl(attachment.storage_path, 3600)
-      .then(({ data }) => { if (data) setImgUrl(data.signedUrl) })
+    fetch('/api/attachments/signed-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storagePath: attachment.storage_path }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d.signedUrl) setImgUrl(d.signedUrl) })
   }, [attachment.storage_path, isImage])
 
   return (
