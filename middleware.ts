@@ -2,18 +2,20 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  const session = request.cookies.get('qa_portal_session')
-  const isLoginPage = request.nextUrl.pathname === '/login'
-  const isApiAuth = request.nextUrl.pathname.startsWith('/api/auth')
-  const isApiNews = request.nextUrl.pathname.startsWith('/api/news')
+  const session      = request.cookies.get('qa_portal_session')
+  const { pathname } = request.nextUrl
+  const isLoginPage    = pathname === '/login'
+  const isRegisterPage = pathname === '/register'
+  const isApiAuth      = pathname.startsWith('/api/auth')
+  const isApiNews      = pathname.startsWith('/api/news')
 
   if (isApiAuth || isApiNews) return NextResponse.next()
 
-  if (!session && !isLoginPage) {
+  if (!session && !isLoginPage && !isRegisterPage) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (session && isLoginPage) {
+  if (session && (isLoginPage || isRegisterPage)) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 

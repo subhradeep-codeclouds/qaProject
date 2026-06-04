@@ -1,20 +1,31 @@
 import { NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
+import { supabase } from '@/lib/supabase'
 
 export async function POST(request: Request) {
-  const { password } = await request.json()
+  const { email, password } = await request.json()
 
-  if (password !== process.env.PORTAL_PASSWORD) {
-    return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
-  }
+  if (!email?.trim())  return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+  if (!password)       return NextResponse.json({ error: 'Password is required' }, { status: 400 })
 
-  const response = NextResponse.json({ success: true })
-  response.cookies.set('qa_portal_session', process.env.PORTAL_SESSION_TOKEN!, {
+  const { data: user } = await supabase
+    .from('users')
+    .select('id, name, email, password_hash')
+    .eq('email', email.toLowerCase().trim())
+    .maybeSingle()
+
+  if (!user) return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
+
+  const valid = await bcrypt.compare(password, user.password_hash)
+  if (!valid) return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
+
+  const response = NextResponse.json({ success: true, user: { id: user.id, name: user.name, email: user.email } })
+  response.cookies.set('qa_portal_session', user.id, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 30,
     path: '/',
   })
-
   return response
 }

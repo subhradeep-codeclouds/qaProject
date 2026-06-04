@@ -114,3 +114,10 @@ export type ProjectAttachment = {
   mime_type: string | null
   created_at: string
 }
+
+export type User = {
+  id: string
+  name: string
+  email: string
+  created_at: string
+}

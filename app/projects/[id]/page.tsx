@@ -88,6 +88,9 @@ export default function ProjectDetailPage() {
   const [editingSheetId, setEditingSheetId] = useState<string | null>(null)
   const [editingNoteId,  setEditingNoteId]  = useState<string | null>(null)
 
+  // Notes expand/collapse
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
+
   // ── Fetch ────────────────────────────────────────────────────────────────
 
   const fetchData = useCallback(async () => {
@@ -304,7 +307,7 @@ export default function ProjectDetailPage() {
       const { error: storageErr } = await supabase.storage
         .from('project-attachments')
         .upload(path, file)
-      if (storageErr) { toast.error(`Upload failed: ${file.name}`); return }
+      if (storageErr) { toast.error(`Upload failed: ${storageErr.message}`); return }
       const { error: dbErr } = await supabase.from('project_attachments').insert([{
         project_id: id,
         name: file.name,
@@ -732,17 +735,17 @@ export default function ProjectDetailPage() {
           {notes.length === 0 ? (
             <EmptyState icon={<StickyNote size={28} />} message="No notes yet." sub="Add notes, observations or reminders for this project." />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
               {notes.map((note, idx) => {
-                const palette = NOTE_PALETTE[idx % NOTE_PALETTE.length]
+                const palette    = NOTE_PALETTE[idx % NOTE_PALETTE.length]
+                const isExpanded = expandedNotes.has(note.id)
+                const isLong     = (note.note?.length ?? 0) > 180
                 return (
                   <div key={note.id} className={cn(
                     'group relative rounded-2xl overflow-hidden border shadow-sm hover:shadow-md transition-all duration-200',
                     palette.border
                   )}>
-                    {/* Accent bar */}
                     <div className={cn('h-1.5 bg-gradient-to-r', palette.bar)} />
-                    {/* Card body */}
                     <div className={cn('p-4', palette.bg)}>
                       {/* Header row */}
                       <div className="flex items-start justify-between gap-2 mb-3">
@@ -764,11 +767,28 @@ export default function ProjectDetailPage() {
                           </button>
                         </div>
                       </div>
-                      {/* Note text */}
+                      {/* Note text with show more */}
                       {note.note && (
-                        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap border-t border-black/5 dark:border-white/10 pt-3">
-                          {note.note}
-                        </p>
+                        <div className="border-t border-black/5 dark:border-white/10 pt-3">
+                          <p className={cn(
+                            'text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap',
+                            !isExpanded && 'line-clamp-4'
+                          )}>
+                            {note.note}
+                          </p>
+                          {isLong && (
+                            <button
+                              onClick={() => setExpandedNotes(prev => {
+                                const next = new Set(prev)
+                                next.has(note.id) ? next.delete(note.id) : next.add(note.id)
+                                return next
+                              })}
+                              className={cn('mt-2 text-xs font-bold transition-colors hover:opacity-70', palette.date)}
+                            >
+                              {isExpanded ? '↑ Show less' : '↓ Show more'}
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
