@@ -90,7 +90,9 @@ export default function RegisterPage() {
     const data = await res.json()
     if (res.ok) {
       setSuccess(true)
-      setTimeout(() => { router.push('/'); router.refresh() }, 1200)
+      setTimeout(() => {
+        router.push(`/verify-email?userId=${data.userId}&email=${encodeURIComponent(data.email)}`)
+      }, 800)
     } else {
       setLoading(false)
       setError(data.error ?? 'Registration failed')
@@ -120,10 +122,10 @@ export default function RegisterPage() {
               <Bug size={22} className="text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-black text-white tracking-tight" style={{ textShadow:`0 0 20px ${theme.glow}` }}>QA Portal</h1>
+              <h1 className="text-xl font-black text-white tracking-tight" style={{ textShadow:`0 0 20px ${theme.glow}` }}>QADesk</h1>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <Sparkles size={10} className="text-yellow-300" />
-                <p className="text-[10px] text-white/60 font-semibold tracking-widest uppercase">Team Workspace</p>
+                <p className="text-[10px] text-white/60 font-semibold tracking-widest uppercase">Quality Assurance Workspace</p>
               </div>
             </div>
           </div>
@@ -176,7 +178,7 @@ export default function RegisterPage() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center mx-auto mb-3 shadow-xl shadow-emerald-200">
               <Bug size={24} className="text-white" />
             </div>
-            <h1 className="text-lg font-black text-slate-800">QA Portal</h1>
+            <h1 className="text-lg font-black text-slate-800">QADesk</h1>
           </div>
 
           <div className="bg-white/80 backdrop-blur-2xl rounded-3xl border border-emerald-100 p-8"
@@ -189,7 +191,7 @@ export default function RegisterPage() {
                   <CheckCircle2 size={32} className="text-emerald-500" />
                 </div>
                 <h3 className="text-xl font-black text-slate-800">Account created!</h3>
-                <p className="text-slate-400 text-sm mt-1">Welcome to the team! Redirecting... ✨</p>
+                <p className="text-slate-400 text-sm mt-1">Sending verification OTP to your email... 📧</p>
               </div>
             ) : (
               <>
@@ -202,7 +204,7 @@ export default function RegisterPage() {
                     Start your journey<br />
                     <span className="bg-clip-text text-transparent"
                       style={{ backgroundImage:'linear-gradient(90deg,#22c55e,#3b82f6)', WebkitBackgroundClip:'text' }}>
-                      with QA Portal
+                      with QADesk
                     </span>
                   </h2>
                   <p className="text-slate-400 text-sm">Fill in the details to get started.</p>

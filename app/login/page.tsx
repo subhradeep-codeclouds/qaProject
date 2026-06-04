@@ -107,11 +107,11 @@ function LeftPanel({ theme, now, gradient }: { theme: ReturnType<typeof getTheme
           </div>
           <div>
             <h1 className="text-xl font-black text-white tracking-tight leading-tight" style={{ textShadow:`0 0 20px ${theme.glow}` }}>
-              QA Portal
+              QADesk
             </h1>
             <div className="flex items-center gap-1.5 mt-0.5">
               <Sparkles size={10} className="text-yellow-300" />
-              <p className="text-[10px] text-white/60 font-semibold tracking-widest uppercase">Team Workspace</p>
+              <p className="text-[10px] text-white/60 font-semibold tracking-widest uppercase">Quality Assurance Workspace</p>
             </div>
           </div>
         </div>
@@ -209,6 +209,8 @@ export default function LoginPage() {
     if (res.ok) {
       setSuccess(true)
       setTimeout(() => { router.push('/'); router.refresh() }, 900)
+    } else if (data.needsVerification) {
+      router.push(`/verify-email?userId=${data.userId}&email=${encodeURIComponent(data.email)}`)
     } else {
       setLoading(false)
       setError(data.error ?? 'Login failed')
@@ -234,7 +236,7 @@ export default function LoginPage() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center mx-auto mb-3 shadow-xl shadow-violet-200">
               <Bug size={24} className="text-white" />
             </div>
-            <h1 className="text-lg font-black text-slate-800">QA Portal</h1>
+            <h1 className="text-lg font-black text-slate-800">QADesk</h1>
             <p className="text-slate-400 text-sm mt-1">{theme.emoji} {format(now,'hh:mm a')}</p>
           </div>
 
