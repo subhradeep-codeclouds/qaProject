@@ -22,11 +22,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             toastOptions={{
               style: {
                 background: '#ffffff',
-                color: '#1c1917',
-                border: '1px solid rgba(249,115,22,0.2)',
+                color: '#1e1133',
+                border: '1.5px solid rgba(124,58,237,0.20)',
                 borderRadius: '12px',
                 fontSize: '13px',
-                boxShadow: '0 8px 30px rgba(249,115,22,0.12)',
+                fontWeight: '500',
+                boxShadow: '0 8px 30px rgba(124,58,237,0.12)',
               },
             }}
           />

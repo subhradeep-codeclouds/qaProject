@@ -63,12 +63,10 @@ export default function CalendarPage() {
   const [selectedDay, setSelectedDay] = useState(new Date())
   const [googleConnected] = useState(false)
 
-  // Modal state
   const [showModal, setShowModal] = useState(false)
   const [modalDate, setModalDate] = useState<Date>(new Date())
   const [modalView, setModalView] = useState<'options' | 'add-schedule' | 'add-todo'>('options')
 
-  // Form fields
   const [newTodoText, setNewTodoText] = useState('')
   const [scheduleTitle, setScheduleTitle] = useState('')
   const [scheduleStart, setScheduleStart] = useState('09:00')
@@ -139,7 +137,6 @@ export default function CalendarPage() {
     setShowModal(true)
   }
 
-  // Build month grid
   const monthStart = startOfMonth(currentMonth)
   const monthEnd = endOfMonth(currentMonth)
   const calStart = startOfWeek(monthStart, { weekStartsOn: 1 })
@@ -167,16 +164,16 @@ export default function CalendarPage() {
 
         {/* Google Calendar connection banner */}
         {!googleConnected && (
-          <div className="glass-card p-4 border-blue-500/20 bg-blue-500/5 flex items-start gap-3">
+          <div className="glass-card p-4 flex items-start gap-3" style={{ borderColor: 'rgba(59,130,246,0.3)' }}>
             <AlertCircle size={16} className="text-blue-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-blue-300">Connect Google Calendar</p>
+              <p className="text-sm font-semibold text-blue-300">Connect Google Calendar</p>
               <p className="text-xs text-slate-400 mt-0.5">
-                Add your Google OAuth credentials to .env to see your real meetings. Currently showing demo events.
+                Add your Google OAuth credentials to .env to see real meetings. Currently showing demo events.
               </p>
             </div>
-            <button className="btn-primary flex-shrink-0">
-              <Calendar size={14} /> Connect Google
+            <button className="btn-primary flex-shrink-0 text-xs">
+              <Calendar size={13} /> Connect Google
             </button>
           </div>
         )}
@@ -185,25 +182,25 @@ export default function CalendarPage() {
         <div className="glass-card p-5">
           {/* Month navigator */}
           <div className="flex items-center justify-between mb-5">
-            <h3 className="font-bold text-white text-lg">
+            <h3 className="font-bold text-white text-lg tracking-tight">
               {format(currentMonth, 'MMMM yyyy')}
             </h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentMonth(m => subMonths(m, 1))}
-                className="w-8 h-8 rounded-lg bg-white/[0.05] hover:bg-white/[0.09] flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center transition-colors border border-white/[0.06]"
               >
                 <ChevronLeft size={15} className="text-slate-400" />
               </button>
               <button
                 onClick={() => { setCurrentMonth(new Date()); setSelectedDay(new Date()) }}
-                className="px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.09] text-xs text-slate-300 transition-colors"
+                className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-xs text-slate-300 font-medium transition-colors border border-white/[0.06]"
               >
                 Today
               </button>
               <button
                 onClick={() => setCurrentMonth(m => addMonths(m, 1))}
-                className="w-8 h-8 rounded-lg bg-white/[0.05] hover:bg-white/[0.09] flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center transition-colors border border-white/[0.06]"
               >
                 <ChevronRight size={15} className="text-slate-400" />
               </button>
@@ -213,7 +210,7 @@ export default function CalendarPage() {
           {/* Day-of-week headers */}
           <div className="grid grid-cols-7 gap-1 mb-1">
             {DAY_LABELS.map(d => (
-              <div key={d} className="text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider py-1">
+              <div key={d} className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest py-1.5">
                 {d}
               </div>
             ))}
@@ -233,11 +230,11 @@ export default function CalendarPage() {
                   key={day.toISOString()}
                   onClick={() => openModalForDate(day)}
                   className={cn(
-                    'p-2 rounded-xl text-center transition-all min-h-[60px] flex flex-col items-center justify-start pt-2 relative group',
+                    'p-1.5 rounded-xl text-center transition-all min-h-[56px] flex flex-col items-center justify-start pt-2 relative group',
                     !isCurrentMonth && 'opacity-30',
-                    isSelected && 'bg-violet-600/30 border border-violet-500/40',
-                    !isSelected && isTodays && 'bg-white/[0.06] border border-white/[0.12]',
-                    !isSelected && !isTodays && 'hover:bg-white/[0.05]',
+                    isSelected && 'bg-violet-600/25 border border-violet-400/50',
+                    !isSelected && isTodays && 'bg-white/[0.08] border border-white/[0.15]',
+                    !isSelected && !isTodays && 'hover:bg-white/[0.05] border border-transparent',
                   )}
                 >
                   <p className={cn(
@@ -251,26 +248,26 @@ export default function CalendarPage() {
                       {Array.from({ length: Math.min(evCount, 3) }).map((_, i) => (
                         <div key={`ev-${i}`} className="w-1.5 h-1.5 rounded-full bg-violet-400" />
                       ))}
-                      {todoCnt > 0 && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      )}
+                      {todoCnt > 0 && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
                     </div>
                   )}
-                  <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 flex items-end justify-center pb-1 pointer-events-none transition-opacity">
-                    <span className="text-[9px] text-slate-400">+ add</span>
-                  </div>
+                  <span className="absolute bottom-1 text-[8px] text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                    + add
+                  </span>
                 </button>
               )
             })}
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-white/[0.06]">
-            <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-              <div className="w-2 h-2 rounded-full bg-violet-400" /> Events / Calls
+          <div className="flex items-center gap-5 mt-4 pt-4 border-t border-white/[0.06]">
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
+              <div className="w-2 h-2 rounded-full bg-violet-400" />
+              Events / Calls
             </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-              <div className="w-2 h-2 rounded-full bg-emerald-400" /> Todos
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
+              <div className="w-2 h-2 rounded-full bg-emerald-400" />
+              Todos
             </div>
           </div>
         </div>
@@ -280,7 +277,7 @@ export default function CalendarPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-title">
               {isToday(selectedDay) ? 'Today' : format(selectedDay, 'EEEE, MMMM do')}
-              <span className="ml-2 text-sm font-normal text-slate-500">
+              <span className="ml-2 text-sm font-normal text-slate-500 dark:text-[#2d6a3e]">
                 · {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}, {dayTodos.length} todo{dayTodos.length !== 1 ? 's' : ''}
               </span>
             </h3>
@@ -309,7 +306,7 @@ export default function CalendarPage() {
                           <div className="flex items-center gap-2">
                             <p className="font-semibold text-white">{ev.title}</p>
                             {ev.type === 'schedule' && (
-                              <span className="text-[9px] bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full px-1.5 py-0.5 font-medium">
+                              <span className="text-[9px] bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full px-1.5 py-0.5 font-bold">
                                 Call
                               </span>
                             )}
@@ -318,8 +315,8 @@ export default function CalendarPage() {
                         </div>
                         {ev.meetLink && ev.meetLink !== '#' && (
                           <a href={ev.meetLink} target="_blank" rel="noopener noreferrer">
-                            <button className="btn-primary flex-shrink-0 ml-3">
-                              <Video size={13} /> Join
+                            <button className="btn-primary flex-shrink-0 ml-3 text-xs">
+                              <Video size={12} /> Join
                             </button>
                           </a>
                         )}
@@ -345,15 +342,15 @@ export default function CalendarPage() {
           {dayTodos.length > 0 && (
             <div className="glass-card p-4 mb-4">
               <div className="flex items-center gap-2 mb-3">
-                <CheckSquare size={14} className="text-emerald-400" />
-                <h4 className="text-sm font-semibold text-white">Todo Checklist</h4>
+                <CheckSquare size={14} className="text-emerald-400 flex-shrink-0" />
+                <h4 className="text-sm font-bold text-white">Todo Checklist</h4>
                 <span className="text-xs text-slate-500 ml-1">
                   {dayTodos.filter(t => t.completed).length}/{dayTodos.length} done
                 </span>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {dayTodos.map(todo => (
-                  <label key={todo.id} className="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-white/[0.03] transition-colors">
+                  <label key={todo.id} className="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-white/[0.04] transition-colors">
                     <input
                       type="checkbox"
                       checked={todo.completed}
@@ -365,7 +362,7 @@ export default function CalendarPage() {
                     </span>
                     <button
                       onClick={e => { e.preventDefault(); deleteTodo(todo.id) }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-500/20 rounded"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-500/20 rounded-lg"
                     >
                       <X size={12} className="text-red-400" />
                     </button>
@@ -378,7 +375,7 @@ export default function CalendarPage() {
           {/* Empty state */}
           {dayEvents.length === 0 && dayTodos.length === 0 && (
             <div className="glass-card p-12 text-center">
-              <Calendar size={36} className="text-slate-700 mx-auto mb-3" />
+              <Calendar size={36} className="text-slate-500 mx-auto mb-3" />
               <p className="text-slate-400 mb-4">Nothing scheduled for this day.</p>
               <button
                 onClick={() => { setModalDate(selectedDay); setModalView('options'); setShowModal(true) }}
@@ -394,37 +391,36 @@ export default function CalendarPage() {
       {/* Day action modal */}
       {showModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm"
           onClick={() => setShowModal(false)}
         >
           <div
             className="glass-card w-full max-w-sm p-5 mx-4 animate-slide-up"
             onClick={e => e.stopPropagation()}
           >
-            {/* Modal header */}
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wide font-semibold">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                   {format(modalDate, 'EEEE')}
                 </p>
-                <h3 className="font-bold text-white">
+                <h3 className="font-bold text-white text-base">
                   {format(modalDate, 'MMMM do, yyyy')}
                 </h3>
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="w-7 h-7 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] flex items-center justify-center transition-colors"
+                className="w-7 h-7 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center transition-colors"
               >
                 <X size={14} className="text-slate-400" />
               </button>
             </div>
 
-            {/* Options view */}
+            {/* Options */}
             {modalView === 'options' && (
               <div className="space-y-2">
                 <button
                   onClick={() => setModalView('add-schedule')}
-                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.04] hover:bg-blue-500/20 border border-white/[0.06] hover:border-blue-500/30 transition-all text-left group"
+                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.04] hover:bg-blue-500/15 border border-white/[0.06] hover:border-blue-500/40 transition-all text-left group"
                 >
                   <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/20">
                     <Phone size={15} className="text-white" />
@@ -436,7 +432,7 @@ export default function CalendarPage() {
                 </button>
                 <button
                   onClick={() => setModalView('add-todo')}
-                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.04] hover:bg-emerald-500/20 border border-white/[0.06] hover:border-emerald-500/30 transition-all text-left group"
+                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.04] hover:bg-emerald-500/15 border border-white/[0.06] hover:border-emerald-500/40 transition-all text-left group"
                 >
                   <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/20">
                     <CheckSquare size={15} className="text-white" />
@@ -465,25 +461,15 @@ export default function CalendarPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="label">Start Time</label>
-                    <input
-                      type="time"
-                      value={scheduleStart}
-                      onChange={e => setScheduleStart(e.target.value)}
-                      className="input-field"
-                    />
+                    <input type="time" value={scheduleStart} onChange={e => setScheduleStart(e.target.value)} className="input-field" />
                   </div>
                   <div>
                     <label className="label">End Time</label>
-                    <input
-                      type="time"
-                      value={scheduleEnd}
-                      onChange={e => setScheduleEnd(e.target.value)}
-                      className="input-field"
-                    />
+                    <input type="time" value={scheduleEnd} onChange={e => setScheduleEnd(e.target.value)} className="input-field" />
                   </div>
                 </div>
                 <div className="flex gap-2 pt-2">
-                  <button onClick={() => setModalView('options')} className="btn-secondary flex-1">Back</button>
+                  <button onClick={() => setModalView('options')} className="btn-secondary flex-1 justify-center">Back</button>
                   <button onClick={addSchedule} className="btn-primary flex-1 justify-center">Add Schedule</button>
                 </div>
               </div>
@@ -504,7 +490,7 @@ export default function CalendarPage() {
                   />
                 </div>
                 <div className="flex gap-2 pt-2">
-                  <button onClick={() => setModalView('options')} className="btn-secondary flex-1">Back</button>
+                  <button onClick={() => setModalView('options')} className="btn-secondary flex-1 justify-center">Back</button>
                   <button onClick={addTodo} className="btn-primary flex-1 justify-center">Add Todo</button>
                 </div>
               </div>
