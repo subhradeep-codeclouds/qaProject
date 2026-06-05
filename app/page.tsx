@@ -73,7 +73,7 @@ interface StatProps {
 }
 function StatCard({ label, value, icon, from, to, loading }: StatProps) {
   return (
-    <div className="card p-5 flex items-center gap-4 hover:shadow-lg hover:shadow-amber-500/15 dark:hover:shadow-[#00e676]/10 transition-all duration-200">
+    <div className="card p-5 flex items-center gap-4 hover:shadow-lg hover:shadow-indigo-500/15 dark:hover:shadow-[#00e676]/10 transition-all duration-200">
       <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center shadow-md text-white shrink-0 bg-gradient-to-br', from, to)}>
         {icon}
       </div>
@@ -116,7 +116,7 @@ function ProjectMiniCard({ project }: { project: Project }) {
           {project.description ?? 'No description.'}
         </p>
         <div className="flex items-center justify-end mt-3">
-          <ExternalLink size={11} className="text-amber-500/60 group-hover:text-amber-700 dark:group-hover:text-[#00e676] transition-colors" />
+          <ExternalLink size={11} className="text-indigo-300/80 group-hover:text-indigo-600 dark:group-hover:text-[#00e676] transition-colors" />
         </div>
       </div>
     </Link>
@@ -137,7 +137,7 @@ function NewsCard({ article, index }: { article: NewsArticle; index: number }) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length]
   return (
     <a href={article.url} target="_blank" rel="noopener noreferrer"
-       className="group flex flex-col overflow-hidden rounded-2xl border border-amber-400/30 dark:border-[#1e4a24] bg-[#fbd154] dark:bg-[#071507] hover:shadow-xl hover:shadow-amber-400/20 dark:hover:shadow-[#00e676]/10 hover:-translate-y-1 transition-all duration-300">
+       className="group flex flex-col overflow-hidden rounded-2xl bg-white/72 dark:bg-[#071507] hover:bg-white/92 border border-white/88 dark:border-[#1e4a24] hover:border-indigo-200 dark:hover:border-[#00e676]/30 hover:shadow-xl hover:shadow-indigo-200/30 dark:hover:shadow-[#00e676]/10 hover:-translate-y-1 transition-all duration-300" style={{ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
       <div className={`h-1.5 bg-gradient-to-r ${accent} flex-shrink-0`} />
       {article.cover_image && (
         <div className="w-full h-36 overflow-hidden bg-slate-700 dark:bg-[#0c2a10]">
@@ -148,23 +148,23 @@ function NewsCard({ article, index }: { article: NewsArticle; index: number }) {
         {article.tag_list.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {article.tag_list.slice(0, 3).map(t => (
-              <span key={t} className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-900/15 text-amber-900 dark:bg-violet-500/20 dark:text-violet-300 uppercase tracking-wide">
+              <span key={t} className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-100/80 text-indigo-700 dark:bg-violet-500/20 dark:text-violet-300 uppercase tracking-wide">
                 {t}
               </span>
             ))}
           </div>
         )}
-        <p className="text-sm font-bold text-amber-900 dark:text-white line-clamp-3 leading-snug group-hover:text-amber-700 dark:group-hover:text-[#00e676] transition-colors flex-1">
+        <p className="text-sm font-bold text-indigo-900 dark:text-white line-clamp-3 leading-snug group-hover:text-indigo-600 dark:group-hover:text-[#00e676] transition-colors flex-1">
           {article.title}
         </p>
-        <div className="flex items-center justify-between pt-2 border-t border-amber-400/30 dark:border-[#1e4a24]">
+        <div className="flex items-center justify-between pt-2 border-t border-indigo-100/60 dark:border-[#1e4a24]">
           <div className="flex items-center gap-1.5">
             <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${accent} flex items-center justify-center flex-shrink-0`}>
               <span className="text-[9px] text-white font-black">{article.user.name.charAt(0).toUpperCase()}</span>
             </div>
-            <span className="text-[10px] text-amber-800 dark:text-slate-400 font-medium truncate max-w-[100px]">{article.user.name}</span>
+            <span className="text-[10px] text-indigo-700 dark:text-slate-400 font-medium truncate max-w-[100px]">{article.user.name}</span>
           </div>
-          <div className="flex items-center gap-1 text-[10px] text-amber-700 dark:text-slate-500 flex-shrink-0">
+          <div className="flex items-center gap-1 text-[10px] text-indigo-400 dark:text-slate-500 flex-shrink-0">
             <Clock size={9} />
             <span>{article.reading_time_minutes}m read</span>
           </div>
@@ -256,9 +256,9 @@ export default function Dashboard() {
   // ── Banner theme values ──────────────────────────────────────
   const bannerBg = dark
     ? 'linear-gradient(135deg, #020c02 0%, #071f07 55%, #030f03 100%)'
-    : 'linear-gradient(135deg, #78350f 0%, #b45309 50%, #f59e0b 100%)'
+    : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #3b82f6 100%)'
 
-  const bannerShadow = dark ? 'shadow-[#00e676]/8' : 'shadow-amber-700/30'
+  const bannerShadow = dark ? 'shadow-[#00e676]/8' : 'shadow-indigo-500/30'
 
   return (
     <div className="min-h-screen">
@@ -272,10 +272,10 @@ export default function Dashboard() {
           style={{ background: bannerBg }}
         >
           {/* Decorative blobs */}
-          <div className={`absolute -bottom-6 -left-6 w-32 h-32 rounded-full blur-2xl pointer-events-none ${dark ? 'bg-[#00e676]/8' : 'bg-amber-900/25'}`} />
+          <div className={`absolute -bottom-6 -left-6 w-32 h-32 rounded-full blur-2xl pointer-events-none ${dark ? 'bg-[#00e676]/8' : 'bg-violet-400/20'}`} />
           <div className="absolute top-0 right-0 h-full opacity-20 pointer-events-none" style={{ width: '40%' }}>
             <div className={`absolute top-4 right-8 w-32 h-32 rounded-full blur-2xl ${dark ? 'bg-[#00e676]/15' : 'bg-white/50'}`} />
-            <div className={`absolute bottom-4 right-24 w-16 h-16 rounded-full blur-xl ${dark ? 'bg-[#69ff47]/8' : 'bg-amber-200/30'}`} />
+            <div className={`absolute bottom-4 right-24 w-16 h-16 rounded-full blur-xl ${dark ? 'bg-[#69ff47]/8' : 'bg-blue-300/30'}`} />
           </div>
 
           <div className="relative flex flex-col lg:flex-row items-start gap-6">
@@ -295,8 +295,8 @@ export default function Dashboard() {
                   dark ? 'bg-[#00e676]/5 border-[#00e676]/20' : 'bg-white/10 border-white/20'
                 }`}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Clock size={15} className={dark ? 'text-[#00e676]/70' : 'text-amber-100'} />
-                    <span className={`text-[11px] font-bold uppercase tracking-widest ${dark ? 'text-[#00e676]/60' : 'text-amber-100'}`}>
+                    <Clock size={15} className={dark ? 'text-[#00e676]/70' : 'text-indigo-200'} />
+                    <span className={`text-[11px] font-bold uppercase tracking-widest ${dark ? 'text-[#00e676]/60' : 'text-indigo-200'}`}>
                       Shift Status
                     </span>
                   </div>
@@ -322,7 +322,7 @@ export default function Dashboard() {
             }`}>
               <div className="flex items-center justify-between mb-3">
                 <span className="flex items-center gap-2 text-sm font-bold text-white">
-                  <CheckSquare size={14} className={dark ? 'text-[#00e676]/70' : 'text-amber-100'} />
+                  <CheckSquare size={14} className={dark ? 'text-[#00e676]/70' : 'text-indigo-200'} />
                   Today&apos;s Todos
                 </span>
                 <button
@@ -356,7 +356,7 @@ export default function Dashboard() {
                         type="checkbox"
                         checked={todo.completed}
                         onChange={() => toggleTodo(todo.id)}
-                        className={`mt-0.5 cursor-pointer flex-shrink-0 ${dark ? 'accent-[#00e676]' : 'accent-amber-500'}`}
+                        className={`mt-0.5 cursor-pointer flex-shrink-0 ${dark ? 'accent-[#00e676]' : 'accent-indigo-400'}`}
                       />
                       <span className={cn('text-xs text-white flex-1 leading-relaxed', todo.completed && 'line-through opacity-40')}>
                         {todo.text}
@@ -385,7 +385,7 @@ export default function Dashboard() {
                     className={`flex-1 text-white text-xs rounded-lg px-2.5 py-1.5 outline-none border ${
                       dark
                         ? 'bg-[#00e676]/5 border-[#00e676]/20 placeholder-[#00e676]/40'
-                        : 'bg-white/10 border-white/20 placeholder-amber-100/50'
+                        : 'bg-white/10 border-white/20 placeholder-indigo-200/60'
                     }`}
                     autoFocus
                   />
@@ -428,7 +428,7 @@ export default function Dashboard() {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="section-title">Recent Projects</h3>
-              <Link href="/projects" className="flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-900 dark:text-[#00e676]/70 dark:hover:text-[#00e676] transition-colors">
+              <Link href="/projects" className="flex items-center gap-1 text-xs font-semibold text-indigo-500 hover:text-indigo-700 dark:text-[#00e676]/70 dark:hover:text-[#00e676] transition-colors">
                 View all <ArrowRight size={13} />
               </Link>
             </div>
@@ -436,7 +436,7 @@ export default function Dashboard() {
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="rounded-2xl h-44 animate-pulse bg-[#f3c741] dark:bg-[#0a1e0a]" />
+                  <div key={i} className="rounded-2xl h-44 animate-pulse bg-indigo-100/60 dark:bg-[#0a1e0a]" />
                 ))}
               </div>
             ) : projects.length === 0 ? (
@@ -470,10 +470,10 @@ export default function Dashboard() {
                     <div className={cn('w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center shadow-sm', color)}>
                       <Icon size={15} className="text-white" />
                     </div>
-                    <span className="text-sm font-medium text-slate-300 group-hover:text-white dark:group-hover:text-[#00e676] transition-colors">
+                    <span className="text-sm font-medium text-indigo-700 group-hover:text-indigo-900 dark:text-slate-300 dark:group-hover:text-[#00e676] transition-colors">
                       {label}
                     </span>
-                    <ChevronRight size={14} className="ml-auto text-amber-400/60 group-hover:text-amber-700 dark:group-hover:text-[#00e676]/70 transition-colors" />
+                    <ChevronRight size={14} className="ml-auto text-indigo-300/60 group-hover:text-indigo-500 dark:group-hover:text-[#00e676]/70 transition-colors" />
                   </div>
                 </Link>
               ))}
@@ -485,7 +485,7 @@ export default function Dashboard() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 dark:from-emerald-500 dark:to-green-600 flex items-center justify-center shadow-md shadow-amber-400/30 dark:shadow-emerald-500/20">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 dark:from-emerald-500 dark:to-green-600 flex items-center justify-center shadow-md shadow-indigo-400/30 dark:shadow-emerald-500/20">
                 <Newspaper size={15} className="text-white" />
               </div>
               <div>
@@ -515,7 +515,7 @@ export default function Dashboard() {
           {newsLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="rounded-2xl h-48 animate-pulse bg-[#f3c741] dark:bg-[#0a1e0a]" />
+                <div key={i} className="rounded-2xl h-48 animate-pulse bg-indigo-100/60 dark:bg-[#0a1e0a]" />
               ))}
             </div>
           ) : news.length === 0 ? (
