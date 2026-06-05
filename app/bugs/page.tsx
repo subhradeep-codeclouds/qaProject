@@ -1,239 +1,148 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Header from '@/components/Header'
-import { Bug, Plus, Trash2, AlertTriangle, ChevronDown } from 'lucide-react'
-import { supabase, type Project } from '@/lib/supabase'
-import { cn, formatDate } from '@/lib/utils'
+import { ExternalLink, Link2, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-type BugEntry = {
-  id: string
-  project_id: string
-  title: string
-  severity: 'critical' | 'high' | 'medium' | 'low'
-  status: 'open' | 'in-progress' | 'fixed' | 'closed'
-  description: string | null
-  steps_to_reproduce: string | null
-  environment: string | null
-  created_at: string
-}
+const BUG_TOOLS = [
+  {
+    name: 'Teamwork',
+    description: 'Project management with built-in time tracking, task lists, and team collaboration.',
+    url: 'https://www.teamwork.com',
+    gradient: 'from-green-500 to-emerald-600',
+    shadow: 'shadow-green-500/20',
+    textColor: 'text-green-400',
+    borderColor: 'border-green-500/20',
+    bgColor: 'bg-green-500/5',
+    hoverBorder: 'hover:border-green-500/40',
+  },
+  {
+    name: 'Trello',
+    description: 'Visual kanban boards, lists, and cards for organising tasks and tracking bugs.',
+    url: 'https://trello.com',
+    gradient: 'from-blue-500 to-blue-600',
+    shadow: 'shadow-blue-500/20',
+    textColor: 'text-blue-400',
+    borderColor: 'border-blue-500/20',
+    bgColor: 'bg-blue-500/5',
+    hoverBorder: 'hover:border-blue-500/40',
+  },
+  {
+    name: 'Asana',
+    description: 'Track tasks, projects, and deadlines across your QA team with ease.',
+    url: 'https://app.asana.com',
+    gradient: 'from-pink-500 to-rose-600',
+    shadow: 'shadow-pink-500/20',
+    textColor: 'text-pink-400',
+    borderColor: 'border-pink-500/20',
+    bgColor: 'bg-pink-500/5',
+    hoverBorder: 'hover:border-pink-500/40',
+  },
+  {
+    name: 'Jira',
+    description: 'Plan, track, and manage agile software projects and bug reports at scale.',
+    url: 'https://www.atlassian.com/software/jira',
+    gradient: 'from-blue-600 to-indigo-700',
+    shadow: 'shadow-indigo-500/20',
+    textColor: 'text-indigo-400',
+    borderColor: 'border-indigo-500/20',
+    bgColor: 'bg-indigo-500/5',
+    hoverBorder: 'hover:border-indigo-500/40',
+  },
+]
 
-const SEVERITIES = ['critical', 'high', 'medium', 'low'] as const
-const STATUSES = ['open', 'in-progress', 'fixed', 'closed'] as const
-
-const SEV_STYLES = {
-  critical: 'bg-red-500/20 text-red-400 border-red-500/30',
-  high:     'bg-violet-500/20 text-violet-400 border-violet-500/30',
-  medium:   'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  low:      'bg-green-500/20 text-green-400 border-green-500/30',
-}
-
-const STATUS_STYLES = {
-  'open':        'bg-red-500/20 text-red-400 border-red-500/30',
-  'in-progress': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  'fixed':       'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  'closed':      'bg-slate-500/20 text-slate-400 border-slate-500/30',
-}
-
-const emptyForm = {
-  title: '', project_id: '', severity: 'high' as const, status: 'open' as const,
-  description: '', steps_to_reproduce: '', environment: 'staging',
-}
+const TEAMWORK_FEATURES = ['Projects sync', 'Task cards', 'Bug tracking', 'Team overview', 'Time logs']
 
 export default function BugsPage() {
-  const [bugs, setBugs] = useState<BugEntry[]>([])
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showModal, setShowModal] = useState(false)
-  const [filterStatus, setFilterStatus] = useState('all')
-  const [filterSeverity, setFilterSeverity] = useState('all')
-  const [form, setForm] = useState(emptyForm)
-  const [saving, setSaving] = useState(false)
-
-  useEffect(() => { fetchData() }, [])
-
-  async function fetchData() {
-    const [bugsRes, projRes] = await Promise.all([
-      supabase.from('bugs').select('*').order('created_at', { ascending: false }),
-      supabase.from('projects').select('id, name').order('name'),
-    ])
-    if (bugsRes.data) setBugs(bugsRes.data as any)
-    if (projRes.data) setProjects(projRes.data as any)
-    setLoading(false)
+  function handleConnectTeamwork() {
+    toast('Teamwork login integration coming soon! 🚧', { duration: 3000 })
   }
-
-  async function saveBug() {
-    if (!form.title.trim()) return toast.error('Title required')
-    if (!form.project_id) return toast.error('Select a project')
-    setSaving(true)
-    const { error } = await supabase.from('bugs').insert([form])
-    setSaving(false)
-    if (error) return toast.error('Failed to log bug')
-    toast.success('Bug logged!')
-    setShowModal(false)
-    setForm(emptyForm)
-    fetchData()
-  }
-
-  async function updateBugStatus(id: string, status: string) {
-    await supabase.from('bugs').update({ status }).eq('id', id)
-    fetchData()
-  }
-
-  async function deleteBug(id: string) {
-    await supabase.from('bugs').delete().eq('id', id)
-    toast.success('Bug deleted')
-    fetchData()
-  }
-
-  const filtered = bugs.filter(b => {
-    const ms = filterStatus === 'all' || b.status === filterStatus
-    const msev = filterSeverity === 'all' || b.severity === filterSeverity
-    return ms && msev
-  })
-
-  const projectName = (id: string) => projects.find(p => p.id === id)?.name ?? '—'
 
   return (
     <div>
       <Header title="Bug Tracker" />
-      <div className="p-6 space-y-6 animate-fade-in">
+      <div className="p-6 space-y-8 animate-fade-in">
 
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-3">
-          {[
-            { label: 'Open', count: bugs.filter(b => b.status === 'open').length, color: 'text-red-400' },
-            { label: 'In Progress', count: bugs.filter(b => b.status === 'in-progress').length, color: 'text-blue-400' },
-            { label: 'Fixed', count: bugs.filter(b => b.status === 'fixed').length, color: 'text-emerald-400' },
-            { label: 'Critical', count: bugs.filter(b => b.severity === 'critical').length, color: 'text-violet-400' },
-          ].map(s => (
-            <div key={s.label} className="glass-card p-4 text-center">
-              <p className={cn('text-2xl font-bold', s.color)}>{s.count}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
-            </div>
-          ))}
+        {/* Page intro */}
+        <div>
+          <h2 className="text-xl font-bold text-white mb-1">Bug Tracking Integrations</h2>
+          <p className="text-slate-400 text-sm">
+            Open your preferred bug tracking tool directly, or connect your Teamwork account for seamless in-portal access.
+          </p>
         </div>
 
-        {/* Toolbar */}
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex gap-2 flex-wrap">
-            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="input-field w-36">
-              <option value="all">All Status</option>
-              {STATUSES.map(s => <option key={s} value={s} className="bg-slate-900 capitalize">{s}</option>)}
-            </select>
-            <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value)} className="input-field w-36">
-              <option value="all">All Severity</option>
-              {SEVERITIES.map(s => <option key={s} value={s} className="bg-slate-900 capitalize">{s}</option>)}
-            </select>
-          </div>
-          <button className="btn-primary" onClick={() => setShowModal(true)}>
-            <Plus size={15} /> Log Bug
-          </button>
-        </div>
-
-        {/* Bug list */}
-        {loading ? (
-          <div className="space-y-2">{[...Array(5)].map((_, i) => <div key={i} className="glass-card h-16 animate-pulse" />)}</div>
-        ) : filtered.length === 0 ? (
-          <div className="glass-card p-16 text-center">
-            <Bug size={40} className="text-slate-700 mx-auto mb-3" />
-            <p className="text-slate-400">No bugs logged. Great job!</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filtered.map(bug => (
-              <div key={bug.id} className="glass-card p-4 flex items-center gap-4 group">
-                <AlertTriangle size={16} className={cn(
-                  bug.severity === 'critical' ? 'text-red-400' :
-                  bug.severity === 'high' ? 'text-violet-400' :
-                  bug.severity === 'medium' ? 'text-yellow-400' : 'text-green-400'
-                )} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{bug.title}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-slate-500">{projectName(bug.project_id)}</span>
-                    {bug.environment && <span className="text-xs text-slate-600">· {bug.environment}</span>}
-                    <span className="text-xs text-slate-600">· {formatDate(bug.created_at)}</span>
-                  </div>
+        {/* Quick access tools */}
+        <div>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4">Quick Access</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {BUG_TOOLS.map(tool => (
+              <a
+                key={tool.name}
+                href={tool.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`glass-card flex flex-col gap-4 p-5 border ${tool.borderColor} ${tool.bgColor} ${tool.hoverBorder} hover:scale-[1.02] transition-all duration-200 group`}
+              >
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${tool.gradient} flex items-center justify-center shadow-xl ${tool.shadow} flex-shrink-0`}>
+                  <span className="text-white font-black text-lg">{tool.name.charAt(0)}</span>
                 </div>
-                <span className={cn('badge text-[10px]', SEV_STYLES[bug.severity])}>{bug.severity}</span>
-                <select value={bug.status}
-                  onChange={e => updateBugStatus(bug.id, e.target.value)}
-                  className={cn('badge text-[10px] border cursor-pointer bg-transparent', STATUS_STYLES[bug.status])}>
-                  {STATUSES.map(s => <option key={s} value={s} className="bg-slate-900 capitalize">{s}</option>)}
-                </select>
-                <button onClick={() => deleteBug(bug.id)}
-                  className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
-                  <Trash2 size={13} className="text-red-400" />
-                </button>
-              </div>
+                <div className="flex-1">
+                  <h4 className={`font-bold text-base ${tool.textColor}`}>{tool.name}</h4>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">{tool.description}</p>
+                </div>
+                <div className={`flex items-center gap-1.5 text-xs ${tool.textColor} opacity-70 group-hover:opacity-100 transition-opacity`}>
+                  <ExternalLink size={11} />
+                  Open {tool.name}
+                </div>
+              </a>
             ))}
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
-          <div className="glass-card w-full max-w-lg p-6 animate-slide-up max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-5">Log New Bug</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="label">Bug Title *</label>
-                <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                  placeholder="e.g. Login button unresponsive on mobile" className="input-field" />
+        {/* Connect with Teamwork */}
+        <div>
+          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4">Integration</p>
+          <div className="glass-card p-6 border border-green-500/20 bg-green-500/5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-xl shadow-green-500/30 flex-shrink-0">
+                <Link2 size={24} className="text-white" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label">Project *</label>
-                  <select value={form.project_id} onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))}
-                    className="input-field">
-                    <option value="">Select project</option>
-                    {projects.map(p => <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>)}
-                  </select>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-bold text-white text-base">Connect with Teamwork</h4>
+                  <span className="text-[10px] font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full px-2 py-0.5">
+                    Coming Soon
+                  </span>
                 </div>
-                <div>
-                  <label className="label">Environment</label>
-                  <input value={form.environment} onChange={e => setForm(f => ({ ...f, environment: e.target.value }))}
-                    placeholder="staging, prod..." className="input-field" />
-                </div>
-                <div>
-                  <label className="label">Severity</label>
-                  <select value={form.severity} onChange={e => setForm(f => ({ ...f, severity: e.target.value as any }))}
-                    className="input-field">
-                    {SEVERITIES.map(s => <option key={s} value={s} className="bg-slate-900 capitalize">{s}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="label">Status</label>
-                  <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as any }))}
-                    className="input-field">
-                    {STATUSES.map(s => <option key={s} value={s} className="bg-slate-900 capitalize">{s}</option>)}
-                  </select>
+                <p className="text-sm text-slate-400 mb-3">
+                  Log in via your Teamwork account to sync all your projects, task cards, and issues directly into this portal.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {TEAMWORK_FEATURES.map(f => (
+                    <span
+                      key={f}
+                      className="flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5"
+                    >
+                      <CheckCircle size={9} />
+                      {f}
+                    </span>
+                  ))}
                 </div>
               </div>
-              <div>
-                <label className="label">Description</label>
-                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="What happened?" rows={3} className="input-field resize-none" />
-              </div>
-              <div>
-                <label className="label">Steps to Reproduce</label>
-                <textarea value={form.steps_to_reproduce}
-                  onChange={e => setForm(f => ({ ...f, steps_to_reproduce: e.target.value }))}
-                  placeholder="1. Go to...&#10;2. Click..." rows={4} className="input-field resize-none" />
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button className="btn-secondary flex-1" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn-primary flex-1 justify-center" onClick={saveBug} disabled={saving}>
-                {saving ? 'Saving...' : 'Log Bug'}
+
+              <button
+                onClick={handleConnectTeamwork}
+                className="btn-primary flex-shrink-0 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 border-0 shadow-lg shadow-green-500/20"
+              >
+                <Link2 size={14} />
+                Connect Teamwork
               </button>
             </div>
           </div>
         </div>
-      )}
+
+      </div>
     </div>
   )
 }

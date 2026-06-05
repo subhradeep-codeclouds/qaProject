@@ -7,13 +7,15 @@ import {
   Calendar, MessageSquare, Plus, ArrowRight,
   Newspaper, ExternalLink,
   ChevronRight, ChevronDown, ChevronUp, Clock,
-  RefreshCw
+  RefreshCw, CheckSquare, X
 } from 'lucide-react'
 import { supabase, type Project } from '@/lib/supabase'
 import { getProjectGradient, cn } from '@/lib/utils'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import type { NewsArticle } from '@/app/api/news/route'
+
+type Todo = { id: string; text: string; completed: boolean; date: string }
 
 // ── Shift countdown ──────────────────────────────────────────
 function useShiftCountdown() {
@@ -179,13 +181,46 @@ export default function Dashboard() {
   const [news, setNews] = useState<NewsArticle[]>([])
   const [newsLoading, setNewsLoading] = useState(true)
   const [newsExpanded, setNewsExpanded] = useState(false)
+  const [todos, setTodos] = useState<Todo[]>([])
+  const [showAddTodo, setShowAddTodo] = useState(false)
+  const [newTodoText, setNewTodoText] = useState('')
   const { text: shiftText, pct: shiftPct } = useShiftCountdown()
   const greeting = getGreeting()
+
+  const todayKey = format(new Date(), 'yyyy-MM-dd')
+  const todayTodos = todos.filter(t => t.date === todayKey)
 
   useEffect(() => {
     fetchDashboardData()
     fetchNews()
+    const stored = localStorage.getItem('qa_portal_todos')
+    if (stored) {
+      try { setTodos(JSON.parse(stored)) } catch { /* ignore */ }
+    }
   }, [])
+
+  function saveTodosToStorage(updated: Todo[]) {
+    setTodos(updated)
+    localStorage.setItem('qa_portal_todos', JSON.stringify(updated))
+  }
+
+  function addTodo() {
+    if (!newTodoText.trim()) return
+    saveTodosToStorage([
+      ...todos,
+      { id: Date.now().toString(), text: newTodoText.trim(), completed: false, date: todayKey },
+    ])
+    setNewTodoText('')
+    setShowAddTodo(false)
+  }
+
+  function toggleTodo(id: string) {
+    saveTodosToStorage(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t))
+  }
+
+  function deleteTodo(id: string) {
+    saveTodosToStorage(todos.filter(t => t.id !== id))
+  }
 
   async function fetchDashboardData() {
     const [projectsRes, testCasesRes, reportsRes] = await Promise.all([
@@ -223,40 +258,115 @@ export default function Dashboard() {
         <div className="relative overflow-hidden rounded-2xl p-6 shadow-xl shadow-violet-200/50 dark:shadow-violet-900/20"
           style={{ background: 'linear-gradient(135deg,#7c3aed 0%,#3b82f6 55%,#4f46e5 100%)' }}>
           {/* decorative blobs */}
-          <div className="absolute top-0 right-0 w-72 h-full opacity-20 pointer-events-none">
-            <div className="absolute top-4 right-8 w-32 h-32 rounded-full bg-white/40 blur-2xl" />
-            <div className="absolute bottom-2 right-24 w-20 h-20 rounded-full bg-blue-300/50 blur-xl" />
-          </div>
           <div className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full bg-violet-400/20 blur-2xl pointer-events-none" />
+          <div className="absolute top-0 left-1/2 w-64 h-full opacity-10 pointer-events-none">
+            <div className="absolute top-4 right-8 w-32 h-32 rounded-full bg-white/40 blur-2xl" />
+          </div>
 
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-2xl">{greeting.emoji}</span>
-              <h2 className="text-xl font-bold text-white">{greeting.label}, Subhradeep!</h2>
-            </div>
-            <p className="text-violet-100 text-sm">
-              {format(new Date(), 'EEEE, MMMM do yyyy')} &mdash; here&apos;s your daily overview
-            </p>
+          <div className="relative flex flex-col lg:flex-row items-start gap-6">
 
-            {/* shift progress — prominent display */}
-            {shiftText && (
-              <div className="mt-4 p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 max-w-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock size={15} className="text-violet-200" />
-                  <span className="text-[11px] font-semibold text-violet-200 uppercase tracking-widest">Shift Status</span>
-                </div>
-                <p className="text-2xl font-black text-white leading-tight">{shiftText}</p>
-                <div className="mt-3 flex items-center gap-3">
-                  <div className="flex-1 h-2.5 bg-white/20 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-300 to-blue-300 rounded-full transition-all duration-1000"
-                      style={{ width: `${shiftPct}%` }}
-                    />
-                  </div>
-                  <span className="text-sm font-bold text-white">{shiftPct}%</span>
-                </div>
+            {/* Left: greeting + shift */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl">{greeting.emoji}</span>
+                <h2 className="text-xl font-bold text-white">{greeting.label}, Subhradeep!</h2>
               </div>
-            )}
+              <p className="text-violet-100 text-sm">
+                {format(new Date(), 'EEEE, MMMM do yyyy')} &mdash; here&apos;s your daily overview
+              </p>
+
+              {shiftText && (
+                <div className="mt-4 p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 max-w-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock size={15} className="text-violet-200" />
+                    <span className="text-[11px] font-semibold text-violet-200 uppercase tracking-widest">Shift Status</span>
+                  </div>
+                  <p className="text-2xl font-black text-white leading-tight">{shiftText}</p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="flex-1 h-2.5 bg-white/20 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-300 to-blue-300 rounded-full transition-all duration-1000"
+                        style={{ width: `${shiftPct}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-bold text-white">{shiftPct}%</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right: Today's Todos */}
+            <div className="lg:w-72 w-full flex-shrink-0 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="flex items-center gap-2 text-sm font-bold text-white">
+                  <CheckSquare size={14} className="text-violet-200" />
+                  Today&apos;s Todos
+                </span>
+                <button
+                  onClick={() => setShowAddTodo(s => !s)}
+                  className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                  title="Add todo"
+                >
+                  <Plus size={12} className="text-white" />
+                </button>
+              </div>
+
+              {todayTodos.length === 0 && !showAddTodo ? (
+                <div className="py-2 text-center">
+                  <p className="text-violet-200 text-xs">Wanna add todo list for today?</p>
+                  <button
+                    onClick={() => setShowAddTodo(true)}
+                    className="mt-2 w-full text-xs text-white/60 hover:text-white underline underline-offset-2 transition-colors"
+                  >
+                    + Add your first todo
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                  {todayTodos.map(todo => (
+                    <div key={todo.id} className="flex items-start gap-2 group">
+                      <input
+                        type="checkbox"
+                        checked={todo.completed}
+                        onChange={() => toggleTodo(todo.id)}
+                        className="mt-0.5 accent-violet-400 cursor-pointer flex-shrink-0"
+                      />
+                      <span className={cn('text-xs text-white flex-1 leading-relaxed', todo.completed && 'line-through opacity-50')}>
+                        {todo.text}
+                      </span>
+                      <button
+                        onClick={() => deleteTodo(todo.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5"
+                      >
+                        <X size={10} className="text-red-300 hover:text-red-100" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {showAddTodo && (
+                <div className="mt-2 flex gap-1.5">
+                  <input
+                    value={newTodoText}
+                    onChange={e => setNewTodoText(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') addTodo()
+                      if (e.key === 'Escape') { setShowAddTodo(false); setNewTodoText('') }
+                    }}
+                    placeholder="Type & press Enter..."
+                    className="flex-1 bg-white/10 text-white text-xs rounded-lg px-2.5 py-1.5 outline-none border border-white/20 placeholder-violet-300/60"
+                    autoFocus
+                  />
+                  <button
+                    onClick={addTodo}
+                    className="bg-white/20 hover:bg-white/30 text-white rounded-lg px-2.5 text-xs font-medium transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -313,8 +423,6 @@ export default function Dashboard() {
 
           {/* Side panel — 1 col */}
           <div className="space-y-4">
-
-            {/* Quick links */}
             <div className="space-y-2">
               {[
                 { href: '/calendar',   label: 'View Calendar',  icon: Calendar,      color: 'from-cyan-400 to-blue-500' },

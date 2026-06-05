@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, FolderKanban, ClipboardList,
   FileBarChart2, MessageSquare, Calendar,
-  Bug, Zap, Settings, ChevronRight
+  Bug, Settings, ChevronRight
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -17,7 +17,6 @@ const navItems = [
   { href: '/inbox',      label: 'Inbox',       icon: MessageSquare,   color: 'text-rose-500'   },
   { href: '/calendar',   label: 'Calendar',    icon: Calendar,        color: 'text-cyan-500'   },
   { href: '/bugs',       label: 'Bug Tracker', icon: Bug,             color: 'text-red-500'    },
-  { href: '/standup',    label: 'Standup',     icon: Zap,             color: 'text-yellow-500' },
 ]
 
 export default function Sidebar() {
