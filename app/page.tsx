@@ -137,7 +137,7 @@ function NewsCard({ article, index }: { article: NewsArticle; index: number }) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length]
   return (
     <a href={article.url} target="_blank" rel="noopener noreferrer"
-       className="group flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] dark:border-[#1e4a24] bg-[#1a2536] dark:bg-[#071507] hover:shadow-xl hover:shadow-violet-500/15 dark:hover:shadow-[#00e676]/10 hover:-translate-y-1 transition-all duration-300">
+       className="group flex flex-col overflow-hidden rounded-2xl border border-amber-400/30 dark:border-[#1e4a24] bg-[#fbd154] dark:bg-[#071507] hover:shadow-xl hover:shadow-amber-400/20 dark:hover:shadow-[#00e676]/10 hover:-translate-y-1 transition-all duration-300">
       <div className={`h-1.5 bg-gradient-to-r ${accent} flex-shrink-0`} />
       {article.cover_image && (
         <div className="w-full h-36 overflow-hidden bg-slate-700 dark:bg-[#0c2a10]">
@@ -148,23 +148,23 @@ function NewsCard({ article, index }: { article: NewsArticle; index: number }) {
         {article.tag_list.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {article.tag_list.slice(0, 3).map(t => (
-              <span key={t} className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-violet-500/20 text-violet-300 dark:bg-violet-500/20 dark:text-violet-300 uppercase tracking-wide">
+              <span key={t} className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-900/15 text-amber-900 dark:bg-violet-500/20 dark:text-violet-300 uppercase tracking-wide">
                 {t}
               </span>
             ))}
           </div>
         )}
-        <p className="text-sm font-bold text-white line-clamp-3 leading-snug group-hover:text-violet-300 dark:group-hover:text-[#00e676] transition-colors flex-1">
+        <p className="text-sm font-bold text-amber-900 dark:text-white line-clamp-3 leading-snug group-hover:text-amber-700 dark:group-hover:text-[#00e676] transition-colors flex-1">
           {article.title}
         </p>
-        <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] dark:border-[#1e4a24]">
+        <div className="flex items-center justify-between pt-2 border-t border-amber-400/30 dark:border-[#1e4a24]">
           <div className="flex items-center gap-1.5">
             <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${accent} flex items-center justify-center flex-shrink-0`}>
               <span className="text-[9px] text-white font-black">{article.user.name.charAt(0).toUpperCase()}</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-medium truncate max-w-[100px]">{article.user.name}</span>
+            <span className="text-[10px] text-amber-800 dark:text-slate-400 font-medium truncate max-w-[100px]">{article.user.name}</span>
           </div>
-          <div className="flex items-center gap-1 text-[10px] text-slate-500 flex-shrink-0">
+          <div className="flex items-center gap-1 text-[10px] text-amber-700 dark:text-slate-500 flex-shrink-0">
             <Clock size={9} />
             <span>{article.reading_time_minutes}m read</span>
           </div>
@@ -436,7 +436,7 @@ export default function Dashboard() {
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="rounded-2xl h-44 animate-pulse bg-[#243447] dark:bg-[#0a1e0a]" />
+                  <div key={i} className="rounded-2xl h-44 animate-pulse bg-[#f3c741] dark:bg-[#0a1e0a]" />
                 ))}
               </div>
             ) : projects.length === 0 ? (
@@ -515,7 +515,7 @@ export default function Dashboard() {
           {newsLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="rounded-2xl h-48 animate-pulse bg-[#243447] dark:bg-[#0a1e0a]" />
+                <div key={i} className="rounded-2xl h-48 animate-pulse bg-[#f3c741] dark:bg-[#0a1e0a]" />
               ))}
             </div>
           ) : news.length === 0 ? (
