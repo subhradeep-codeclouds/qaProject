@@ -303,49 +303,50 @@ html, body {
 
 /* ════════════════════════════════════════════════════════════
    LIGHT MODE CARD TEXT OVERRIDES
-   Written outside @layer — highest cascade priority.
-   Ensures all text is legible on #fbd154 (golden yellow) cards.
+   Uses html:not(.dark) to ONLY fire in light mode.
+   (Plain :not(.dark) matches card descendants even in dark mode
+   because .card itself never carries the dark class — bug fixed.)
    ════════════════════════════════════════════════════════════ */
 
-/* White text → very dark warm brown */
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-white { color: #1c1a14; }
+/* White / near-white text → very dark warm brown */
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-white   { color: #1c1a14; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-slate-100 { color: #1c1a14; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-slate-200 { color: #2c1a0a; }
 
 /* Slate grays → warm amber-browns */
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-slate-100 { color: #1c1a14; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-slate-200 { color: #2c1a0a; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-slate-300 { color: #4a3520; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-slate-400 { color: #6b4c2a; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-slate-500 { color: #78532a; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-slate-600 { color: #5c3d1e; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-slate-300 { color: #4a3520; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-slate-400 { color: #6b4c2a; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-slate-500 { color: #78532a; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-slate-600 { color: #5c3d1e; }
 
 /* Violet/purple → dark violet */
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-violet-300 { color: #5b21b6; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-violet-400 { color: #4c1d95; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-violet-300 { color: #5b21b6; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-violet-400 { color: #4c1d95; }
 
 /* Blue → dark blue */
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-blue-300 { color: #1e40af; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-blue-400 { color: #1e3a8a; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-blue-300 { color: #1e40af; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-blue-400 { color: #1e3a8a; }
 
-/* Emerald / green → dark green */
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-emerald-300 { color: #065f46; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-emerald-400 { color: #064e3b; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-green-400   { color: #14532d; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-teal-400    { color: #134e4a; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-cyan-400    { color: #155e75; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-sky-400     { color: #0c4a6e; }
+/* Emerald / green / teal / cyan / sky → dark variants */
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-emerald-300 { color: #065f46; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-emerald-400 { color: #064e3b; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-green-400   { color: #14532d; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-teal-400    { color: #134e4a; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-cyan-400    { color: #155e75; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-sky-400     { color: #0c4a6e; }
 
 /* Pink / rose / red → dark variants */
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-pink-400  { color: #9d174d; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-rose-400  { color: #9f1239; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-red-400   { color: #991b1b; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-red-300   { color: #b91c1c; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-pink-400  { color: #9d174d; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-rose-400  { color: #9f1239; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-red-400   { color: #991b1b; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-red-300   { color: #b91c1c; }
 
-/* Indigo / orange / amber → dark variants */
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-indigo-400 { color: #3730a3; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-orange-400 { color: #9a3412; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-amber-300  { color: #92400e; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-amber-400  { color: #92400e; }
-:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-yellow-400 { color: #78350f; }
+/* Indigo / orange / amber / yellow → dark variants */
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-indigo-400 { color: #3730a3; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-orange-400 { color: #9a3412; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-amber-300  { color: #92400e; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-amber-400  { color: #92400e; }
+html:not(.dark) :is(.card, .card-hover, .glass-card, .glass-card-hover) .text-yellow-400 { color: #78350f; }
 
 /* ── Scrollbar ─────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }

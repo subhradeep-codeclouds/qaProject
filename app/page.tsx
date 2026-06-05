@@ -73,7 +73,7 @@ interface StatProps {
 }
 function StatCard({ label, value, icon, from, to, loading }: StatProps) {
   return (
-    <div className="card p-5 flex items-center gap-4 hover:shadow-lg hover:shadow-violet-500/10 dark:hover:shadow-[#00e676]/10 transition-all duration-200">
+    <div className="card p-5 flex items-center gap-4 hover:shadow-lg hover:shadow-amber-500/15 dark:hover:shadow-[#00e676]/10 transition-all duration-200">
       <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center shadow-md text-white shrink-0 bg-gradient-to-br', from, to)}>
         {icon}
       </div>
@@ -116,7 +116,7 @@ function ProjectMiniCard({ project }: { project: Project }) {
           {project.description ?? 'No description.'}
         </p>
         <div className="flex items-center justify-end mt-3">
-          <ExternalLink size={11} className="text-slate-500 group-hover:text-violet-400 dark:group-hover:text-[#00e676] transition-colors" />
+          <ExternalLink size={11} className="text-amber-500/60 group-hover:text-amber-700 dark:group-hover:text-[#00e676] transition-colors" />
         </div>
       </div>
     </Link>
@@ -256,9 +256,9 @@ export default function Dashboard() {
   // ── Banner theme values ──────────────────────────────────────
   const bannerBg = dark
     ? 'linear-gradient(135deg, #020c02 0%, #071f07 55%, #030f03 100%)'
-    : 'linear-gradient(135deg, #7c3aed 0%, #3b82f6 55%, #4f46e5 100%)'
+    : 'linear-gradient(135deg, #78350f 0%, #b45309 50%, #f59e0b 100%)'
 
-  const bannerShadow = dark ? 'shadow-[#00e676]/8' : 'shadow-violet-200/50'
+  const bannerShadow = dark ? 'shadow-[#00e676]/8' : 'shadow-amber-700/30'
 
   return (
     <div className="min-h-screen">
@@ -272,10 +272,10 @@ export default function Dashboard() {
           style={{ background: bannerBg }}
         >
           {/* Decorative blobs */}
-          <div className={`absolute -bottom-6 -left-6 w-32 h-32 rounded-full blur-2xl pointer-events-none ${dark ? 'bg-[#00e676]/8' : 'bg-violet-400/20'}`} />
+          <div className={`absolute -bottom-6 -left-6 w-32 h-32 rounded-full blur-2xl pointer-events-none ${dark ? 'bg-[#00e676]/8' : 'bg-amber-900/25'}`} />
           <div className="absolute top-0 right-0 h-full opacity-20 pointer-events-none" style={{ width: '40%' }}>
-            <div className={`absolute top-4 right-8 w-32 h-32 rounded-full blur-2xl ${dark ? 'bg-[#00e676]/15' : 'bg-white/40'}`} />
-            <div className={`absolute bottom-4 right-24 w-16 h-16 rounded-full blur-xl ${dark ? 'bg-[#69ff47]/8' : 'bg-blue-300/30'}`} />
+            <div className={`absolute top-4 right-8 w-32 h-32 rounded-full blur-2xl ${dark ? 'bg-[#00e676]/15' : 'bg-white/50'}`} />
+            <div className={`absolute bottom-4 right-24 w-16 h-16 rounded-full blur-xl ${dark ? 'bg-[#69ff47]/8' : 'bg-amber-200/30'}`} />
           </div>
 
           <div className="relative flex flex-col lg:flex-row items-start gap-6">
@@ -286,7 +286,7 @@ export default function Dashboard() {
                 <span className="text-2xl">{greeting.emoji}</span>
                 <h2 className="text-xl font-bold text-white">{greeting.label}, Subhradeep!</h2>
               </div>
-              <p className={`text-sm ${dark ? 'text-[#00e676]/60' : 'text-violet-100'}`}>
+              <p className={`text-sm ${dark ? 'text-[#00e676]/60' : 'text-white/80'}`}>
                 {format(new Date(), 'EEEE, MMMM do yyyy')} &mdash; here&apos;s your daily overview
               </p>
 
@@ -295,8 +295,8 @@ export default function Dashboard() {
                   dark ? 'bg-[#00e676]/5 border-[#00e676]/20' : 'bg-white/10 border-white/20'
                 }`}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Clock size={15} className={dark ? 'text-[#00e676]/70' : 'text-violet-200'} />
-                    <span className={`text-[11px] font-bold uppercase tracking-widest ${dark ? 'text-[#00e676]/60' : 'text-violet-200'}`}>
+                    <Clock size={15} className={dark ? 'text-[#00e676]/70' : 'text-amber-100'} />
+                    <span className={`text-[11px] font-bold uppercase tracking-widest ${dark ? 'text-[#00e676]/60' : 'text-amber-100'}`}>
                       Shift Status
                     </span>
                   </div>
@@ -322,7 +322,7 @@ export default function Dashboard() {
             }`}>
               <div className="flex items-center justify-between mb-3">
                 <span className="flex items-center gap-2 text-sm font-bold text-white">
-                  <CheckSquare size={14} className={dark ? 'text-[#00e676]/70' : 'text-violet-200'} />
+                  <CheckSquare size={14} className={dark ? 'text-[#00e676]/70' : 'text-amber-100'} />
                   Today&apos;s Todos
                 </span>
                 <button
@@ -338,7 +338,7 @@ export default function Dashboard() {
 
               {todayTodos.length === 0 && !showAddTodo ? (
                 <div className="py-2 text-center">
-                  <p className={`text-xs ${dark ? 'text-[#00e676]/55' : 'text-violet-200'}`}>
+                  <p className={`text-xs ${dark ? 'text-[#00e676]/55' : 'text-white/65'}`}>
                     Wanna add todo list for today?
                   </p>
                   <button
@@ -356,7 +356,7 @@ export default function Dashboard() {
                         type="checkbox"
                         checked={todo.completed}
                         onChange={() => toggleTodo(todo.id)}
-                        className={`mt-0.5 cursor-pointer flex-shrink-0 ${dark ? 'accent-[#00e676]' : 'accent-violet-400'}`}
+                        className={`mt-0.5 cursor-pointer flex-shrink-0 ${dark ? 'accent-[#00e676]' : 'accent-amber-500'}`}
                       />
                       <span className={cn('text-xs text-white flex-1 leading-relaxed', todo.completed && 'line-through opacity-40')}>
                         {todo.text}
@@ -385,7 +385,7 @@ export default function Dashboard() {
                     className={`flex-1 text-white text-xs rounded-lg px-2.5 py-1.5 outline-none border ${
                       dark
                         ? 'bg-[#00e676]/5 border-[#00e676]/20 placeholder-[#00e676]/40'
-                        : 'bg-white/10 border-white/20 placeholder-violet-300/60'
+                        : 'bg-white/10 border-white/20 placeholder-amber-100/50'
                     }`}
                     autoFocus
                   />
@@ -428,7 +428,7 @@ export default function Dashboard() {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="section-title">Recent Projects</h3>
-              <Link href="/projects" className="flex items-center gap-1 text-xs font-semibold text-violet-400 hover:text-violet-300 dark:text-[#00e676]/70 dark:hover:text-[#00e676] transition-colors">
+              <Link href="/projects" className="flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-900 dark:text-[#00e676]/70 dark:hover:text-[#00e676] transition-colors">
                 View all <ArrowRight size={13} />
               </Link>
             </div>
@@ -473,7 +473,7 @@ export default function Dashboard() {
                     <span className="text-sm font-medium text-slate-300 group-hover:text-white dark:group-hover:text-[#00e676] transition-colors">
                       {label}
                     </span>
-                    <ChevronRight size={14} className="ml-auto text-slate-600 group-hover:text-violet-400 dark:group-hover:text-[#00e676]/70 transition-colors" />
+                    <ChevronRight size={14} className="ml-auto text-amber-400/60 group-hover:text-amber-700 dark:group-hover:text-[#00e676]/70 transition-colors" />
                   </div>
                 </Link>
               ))}
@@ -485,7 +485,7 @@ export default function Dashboard() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-blue-600 dark:from-emerald-500 dark:to-green-600 flex items-center justify-center shadow-md shadow-violet-300/30 dark:shadow-emerald-500/20">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 dark:from-emerald-500 dark:to-green-600 flex items-center justify-center shadow-md shadow-amber-400/30 dark:shadow-emerald-500/20">
                 <Newspaper size={15} className="text-white" />
               </div>
               <div>

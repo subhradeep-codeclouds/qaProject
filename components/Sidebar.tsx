@@ -16,7 +16,7 @@ const navItems = [
   { href: '/reports',    label: 'Reports',     icon: FileBarChart2,   color: 'text-amber-700   dark:text-yellow-400'  },
   { href: '/inbox',      label: 'Inbox',       icon: MessageSquare,   color: 'text-rose-600    dark:text-red-400'     },
   { href: '/calendar',   label: 'Calendar',    icon: Calendar,        color: 'text-cyan-600    dark:text-teal-400'    },
-  { href: '/bugs',       label: 'Bug Tracker', icon: Bug,             color: 'text-red-600     dark:text-orange-400'  },
+  { href: '/bugs',       label: 'Bug Tracker', icon: Bug,             color: 'text-red-600     dark:text-yellow-400'  },
 ]
 
 export default function Sidebar() {
@@ -30,7 +30,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-amber-200/50 dark:border-[#1e4a24]">
         <div className="w-10 h-10 rounded-xl
-          bg-gradient-to-br from-amber-400 to-orange-500
+          bg-gradient-to-br from-amber-400 to-yellow-500
           dark:from-emerald-500 dark:to-green-600
           flex items-center justify-center shadow-lg
           shadow-amber-300/50 dark:shadow-emerald-500/30">

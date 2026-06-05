@@ -76,7 +76,7 @@ export default function Header({ title }: { title: string }) {
           <button
             onClick={() => setShowMenu(s => !s)}
             className="w-9 h-9 rounded-xl flex items-center justify-center transition-shadow
-              bg-gradient-to-br from-amber-400 to-orange-500
+              bg-gradient-to-br from-amber-400 to-yellow-500
               dark:from-emerald-500 dark:to-green-600
               shadow-md shadow-amber-300/50 dark:shadow-emerald-500/30
               hover:shadow-lg hover:shadow-amber-400/60 dark:hover:shadow-emerald-500/50">
