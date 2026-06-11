@@ -80,6 +80,7 @@ export default function CalendarPage() {
   const [googleConnected]               = useState(false)
 
   const calendarRef                     = useRef<HTMLDivElement>(null)
+  const dayDetailRef                    = useRef<HTMLDivElement>(null)
   const [snapping, setSnapping]         = useState(false)
   const [syncStatus, setSyncStatus]     = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle')
 
@@ -580,9 +581,19 @@ export default function CalendarPage() {
                       </button>
                     )}
                     {overflow > 0 && (
-                      <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold px-0.5 leading-none">
+                      <button
+                        onClick={e => {
+                          e.stopPropagation()
+                          setSelectedDay(day)
+                          setTimeout(() => dayDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+                        }}
+                        className="text-[9px] font-bold px-1.5 py-0.5 rounded-md leading-none text-left w-full
+                          text-violet-500 bg-violet-50 hover:bg-violet-100 border border-violet-200/60
+                          dark:text-violet-300 dark:bg-violet-500/10 dark:hover:bg-violet-500/20 dark:border-violet-500/20
+                          transition-colors"
+                      >
                         +{overflow} more
-                      </span>
+                      </button>
                     )}
                   </div>
 
@@ -621,7 +632,7 @@ export default function CalendarPage() {
         </div>
 
         {/* ── Selected day panel ── */}
-        <div>
+        <div ref={dayDetailRef}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-title">
               {isToday(selectedDay) ? 'Today' : format(selectedDay, 'EEEE, MMMM do')}
