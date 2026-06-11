@@ -82,7 +82,10 @@ export default function CalendarPage() {
 
   const [showModal, setShowModal] = useState(false)
   const [modalDate, setModalDate] = useState<Date>(new Date())
-  const [modalView, setModalView] = useState<'options' | 'add-schedule' | 'add-todo' | 'add-note' | 'edit-note' | 'edit-event'>('options')
+  const [modalView, setModalView] = useState<'options' | 'add-schedule' | 'add-todo' | 'add-note' | 'edit-note' | 'edit-event' | 'view-note' | 'view-event' | 'view-todos'>('options')
+
+  const [viewingNote, setViewingNote]   = useState<DayNote | null>(null)
+  const [viewingEvent, setViewingEvent] = useState<CalEvent | null>(null)
 
   const [newTodoText, setNewTodoText]     = useState('')
   const [scheduleTitle, setScheduleTitle] = useState('')
@@ -98,6 +101,10 @@ export default function CalendarPage() {
   const [editEventTitle, setEditEventTitle] = useState('')
   const [editEventStart, setEditEventStart] = useState('09:00')
   const [editEventEnd, setEditEventEnd]     = useState('10:00')
+
+  const [editingTodoId, setEditingTodoId]     = useState<string | null>(null)
+  const [editingTodoText, setEditingTodoText] = useState('')
+  const [newTodoForView, setNewTodoForView]   = useState('')
 
   useEffect(() => {
     const load = <T,>(key: string, setter: (v: T) => void) => {
@@ -190,14 +197,41 @@ export default function CalendarPage() {
     setShowModal(false)
   }
 
+  function openViewNote(note: DayNote) {
+    setViewingNote(note)
+    setModalDate(new Date(note.date + 'T12:00:00'))
+    setModalView('view-note'); setShowModal(true)
+  }
+  function openViewEvent(ev: CalEvent) {
+    setViewingEvent(ev)
+    setModalDate(new Date(ev.start))
+    setModalView('view-event'); setShowModal(true)
+  }
+  function openViewTodos(e: React.MouseEvent, day: Date) {
+    e.stopPropagation()
+    setSelectedDay(day); setModalDate(day)
+    setEditingTodoId(null); setNewTodoForView('')
+    setModalView('view-todos'); setShowModal(true)
+  }
+  function saveTodoEdit(id: string) {
+    if (!editingTodoText.trim()) return
+    saveTodos(todos.map(t => t.id === id ? { ...t, text: editingTodoText.trim() } : t))
+    setEditingTodoId(null)
+  }
+  function addTodoFromView() {
+    if (!newTodoForView.trim()) return
+    saveTodos([...todos, { id: Date.now().toString(), text: newTodoForView.trim(), completed: false, date: format(modalDate, 'yyyy-MM-dd') }])
+    setNewTodoForView('')
+  }
+
   function handleChipClick(e: React.MouseEvent, id: string, kind: 'note' | 'event') {
     e.stopPropagation()
     if (kind === 'note') {
       const note = notes.find(n => n.id === id)
-      if (note) openEditNote(note)
+      if (note) openViewNote(note)
     } else {
-      const ev = userEvents.find(ev => ev.id === id)
-      if (ev) openEditEvent(ev)
+      const ev = allEvents.find(ev => ev.id === id)
+      if (ev) openViewEvent(ev)
     }
   }
 
@@ -421,9 +455,12 @@ export default function CalendarPage() {
                     ))}
                     {/* Show todo chip only if there's room */}
                     {todoCnt > 0 && chips.length < 2 && (
-                      <div className={cn('text-[10px] font-semibold px-1.5 py-1 rounded-md truncate border leading-tight', TODO_CHIP)}>
+                      <button
+                        onClick={e => openViewTodos(e, day)}
+                        className={cn('text-[10px] font-semibold px-1.5 py-1 rounded-md truncate border leading-tight text-left w-full hover:opacity-75 transition-opacity', TODO_CHIP)}
+                      >
                         {todoCnt} todo{todoCnt > 1 ? 's' : ''}
-                      </div>
+                      </button>
                     )}
                     {overflow > 0 && (
                       <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold px-0.5 leading-none">
@@ -886,6 +923,153 @@ export default function CalendarPage() {
                   </div>
                 </div>
               )}
+
+              {/* ── View note ── */}
+              {modalView === 'view-note' && viewingNote && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className={cn('w-2.5 h-2.5 rounded-full flex-shrink-0', NOTE_COLORS[viewingNote.color].swatch)} />
+                    <span className="text-xs font-bold text-indigo-900 dark:text-slate-300 uppercase tracking-widest">
+                      {NOTE_COLORS[viewingNote.color].label} Note
+                    </span>
+                  </div>
+                  <div className={cn('p-4 rounded-xl border text-sm font-semibold leading-relaxed break-words whitespace-pre-wrap', NOTE_COLORS[viewingNote.color].chip, NOTE_COLORS[viewingNote.color].border)}>
+                    {viewingNote.text}
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => { deleteNote(viewingNote.id); setShowModal(false) }}
+                      className="btn-secondary flex-1 justify-center text-red-600 dark:text-red-400 hover:border-red-300 dark:hover:border-red-500/40"
+                    >
+                      <Trash2 size={13} /> Delete
+                    </button>
+                    <button onClick={() => openEditNote(viewingNote)} className="btn-primary flex-1 justify-center">
+                      <Pencil size={13} /> Edit
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── View event ── */}
+              {modalView === 'view-event' && viewingEvent && (
+                <div className="space-y-3">
+                  <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-500/[0.08] border border-indigo-200 dark:border-indigo-500/25">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <p className="font-bold text-indigo-900 dark:text-white text-base leading-snug">{viewingEvent.title}</p>
+                      {viewingEvent.type === 'schedule' && (
+                        <span className="text-[9px] bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-300 dark:border-blue-500/30 rounded-full px-1.5 py-0.5 font-bold flex-shrink-0">Call</span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-3 text-xs text-slate-600 dark:text-slate-400">
+                      <span className="flex items-center gap-1.5">
+                        <Clock size={11} className="text-indigo-400" />
+                        {format(new Date(viewingEvent.start), 'h:mm a')} – {format(new Date(viewingEvent.end), 'h:mm a')}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <Clock size={11} className="text-indigo-400" />
+                        {eventDuration(viewingEvent.start, viewingEvent.end)}
+                      </span>
+                      {viewingEvent.attendees && (
+                        <span className="flex items-center gap-1.5">
+                          <Users size={11} className="text-indigo-400" /> {viewingEvent.attendees} attendees
+                        </span>
+                      )}
+                    </div>
+                    {viewingEvent.description && (
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-snug">{viewingEvent.description}</p>
+                    )}
+                    {viewingEvent.meetLink && viewingEvent.meetLink !== '#' && (
+                      <a href={viewingEvent.meetLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-3 btn-primary text-xs">
+                        <Video size={12} /> Join Meeting
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={() => setShowModal(false)} className="btn-secondary flex-1 justify-center">Close</button>
+                    {userEvents.some(e => e.id === viewingEvent.id) && (
+                      <button onClick={() => openEditEvent(viewingEvent)} className="btn-primary flex-1 justify-center">
+                        <Pencil size={13} /> Edit
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ── View & manage todos ── */}
+              {modalView === 'view-todos' && (() => {
+                const viewDateKey  = format(modalDate, 'yyyy-MM-dd')
+                const viewDateTodos = todos.filter(t => t.date === viewDateKey)
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CheckSquare size={14} className="text-emerald-500" />
+                        <span className="text-xs font-bold text-indigo-900 dark:text-slate-300 uppercase tracking-widest">
+                          Todos · {format(modalDate, 'MMM do')}
+                        </span>
+                      </div>
+                      <span className="text-xs text-slate-400">
+                        {viewDateTodos.filter(t => t.completed).length}/{viewDateTodos.length} done
+                      </span>
+                    </div>
+
+                    <div className="space-y-1 max-h-52 overflow-y-auto">
+                      {viewDateTodos.length === 0 && (
+                        <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4">No todos for this day yet.</p>
+                      )}
+                      {viewDateTodos.map(todo => (
+                        editingTodoId === todo.id ? (
+                          <div key={todo.id} className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
+                            <input
+                              value={editingTodoText}
+                              onChange={e => setEditingTodoText(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter') saveTodoEdit(todo.id); if (e.key === 'Escape') setEditingTodoId(null) }}
+                              className="input-field flex-1 text-sm py-1.5"
+                              autoFocus
+                            />
+                            <button onClick={() => saveTodoEdit(todo.id)} className="btn-primary text-xs px-2.5 py-1.5">Save</button>
+                            <button onClick={() => setEditingTodoId(null)} className="btn-secondary text-xs px-2.5 py-1.5">✕</button>
+                          </div>
+                        ) : (
+                          <div key={todo.id} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-white/[0.04] group transition-colors">
+                            <input type="checkbox" checked={todo.completed} onChange={() => toggleTodo(todo.id)}
+                              className="accent-emerald-500 w-4 h-4 cursor-pointer flex-shrink-0" />
+                            <span className={cn('flex-1 text-sm', todo.completed ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200')}>
+                              {todo.text}
+                            </span>
+                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                              <button
+                                onClick={() => { setEditingTodoId(todo.id); setEditingTodoText(todo.text) }}
+                                className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-white/[0.08] transition-colors"
+                              >
+                                <Pencil size={11} className="text-slate-500 dark:text-slate-400" />
+                              </button>
+                              <button
+                                onClick={() => deleteTodo(todo.id)}
+                                className="p-1 rounded-md hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+                              >
+                                <Trash2 size={11} className="text-red-500 dark:text-red-400" />
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      ))}
+                    </div>
+
+                    <div className="flex gap-2 pt-1 border-t border-slate-200/70 dark:border-white/[0.06]">
+                      <input
+                        value={newTodoForView}
+                        onChange={e => setNewTodoForView(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && addTodoFromView()}
+                        placeholder="Add another todo..."
+                        className="input-field flex-1 text-sm"
+                      />
+                      <button onClick={addTodoFromView} className="btn-primary text-xs px-3">Add</button>
+                    </div>
+                    <button onClick={() => setShowModal(false)} className="btn-secondary w-full justify-center">Done</button>
+                  </div>
+                )
+              })()}
             </div>
           </div>
         </div>
