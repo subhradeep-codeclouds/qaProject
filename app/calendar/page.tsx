@@ -315,8 +315,11 @@ export default function CalendarPage() {
 
           {/* Day-of-week headers */}
           <div className="grid grid-cols-7 gap-1.5 mb-1">
-            {DAY_LABELS.map(d => (
-              <div key={d} className="text-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest py-1.5">{d}</div>
+            {DAY_LABELS.map((d, i) => (
+              <div key={d} className={cn(
+                'text-center text-[10px] font-bold uppercase tracking-widest py-1.5',
+                i >= 5 ? 'text-rose-400 dark:text-rose-500/80' : 'text-slate-400 dark:text-slate-500'
+              )}>{d}</div>
             ))}
           </div>
 
@@ -332,20 +335,24 @@ export default function CalendarPage() {
               const pastOrToday    = isPastOrToday(day)
 
               // WFO/WFH status label + colour
-              let statusLabel = ''; let statusCls = ''
-              if (!weekend && isCurrentMonth) {
+              let statusLabel = ''; let statusCls = ''; let statusIsPill = false
+              if (weekend && isCurrentMonth) {
+                statusLabel  = 'LEAVE'
+                statusCls    = 'text-rose-500 dark:text-rose-400'
+              } else if (!weekend && isCurrentMonth) {
                 if (dayWorkStatus === 'wfo') {
-                  statusLabel = 'WFO'
-                  statusCls   = 'text-amber-700 dark:text-amber-400 dark:drop-shadow-[0_0_5px_rgba(251,191,36,0.7)]'
+                  statusLabel  = 'WFO'
+                  statusCls    = 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/25 dark:text-amber-300 dark:border-amber-500/50'
+                  statusIsPill = true
                 } else if (dayWorkStatus === 'planned_wfo') {
                   statusLabel = 'OFFICE'
                   statusCls   = 'text-violet-700 dark:text-violet-400 dark:drop-shadow-[0_0_5px_rgba(167,139,250,0.7)]'
                 } else if (pastOrToday) {
                   statusLabel = 'WFH'
-                  statusCls   = 'text-emerald-700 dark:text-emerald-400 dark:drop-shadow-[0_0_4px_rgba(52,211,153,0.5)]'
+                  statusCls   = 'text-emerald-600/60 dark:text-emerald-400/45'
                 } else {
                   statusLabel = 'WFH'
-                  statusCls   = 'text-emerald-500/60 dark:text-emerald-400/45'
+                  statusCls   = 'text-emerald-400/40 dark:text-emerald-400/30'
                 }
               }
 
@@ -362,6 +369,18 @@ export default function CalendarPage() {
               const visible  = chips.slice(0, 2)
               const overflow = chips.length - 2 + (todoCnt > 0 && chips.length >= 2 ? 1 : 0)
 
+              const cellBgCls = isSelected
+                ? 'bg-violet-100 dark:bg-violet-600/25 border border-violet-400/70 dark:border-violet-400/50'
+                : isTodays
+                  ? 'bg-indigo-50 dark:bg-white/[0.08] border border-indigo-300/80 dark:border-white/[0.18]'
+                  : dayWorkStatus === 'wfo' && isCurrentMonth
+                    ? 'bg-amber-100 dark:bg-amber-500/20 border-2 border-amber-400 dark:border-amber-500/60 shadow-sm shadow-amber-200/60 dark:shadow-amber-500/10'
+                    : dayWorkStatus === 'planned_wfo' && isCurrentMonth
+                      ? 'bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/25'
+                      : weekend && isCurrentMonth
+                        ? 'bg-rose-50 dark:bg-rose-500/[0.08] border border-rose-200/80 dark:border-rose-500/20 hover:bg-rose-100/70 dark:hover:bg-rose-500/[0.13]'
+                        : 'hover:bg-slate-50 dark:hover:bg-white/[0.05] border border-transparent hover:border-slate-200 dark:hover:border-white/[0.08]'
+
               return (
                 <button
                   key={day.toISOString()}
@@ -369,11 +388,7 @@ export default function CalendarPage() {
                   className={cn(
                     'rounded-xl transition-all min-h-[132px] flex flex-col items-stretch p-2 relative group text-left',
                     !isCurrentMonth && 'opacity-30',
-                    isSelected && 'bg-violet-100 dark:bg-violet-600/25 border border-violet-400/70 dark:border-violet-400/50',
-                    !isSelected && isTodays && 'bg-indigo-50 dark:bg-white/[0.08] border border-indigo-300/80 dark:border-white/[0.18]',
-                    !isSelected && !isTodays && 'hover:bg-slate-50 dark:hover:bg-white/[0.05] border border-transparent hover:border-slate-200 dark:hover:border-white/[0.08]',
-                    dayWorkStatus === 'wfo' && isCurrentMonth && !isSelected && 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/25',
-                    dayWorkStatus === 'planned_wfo' && isCurrentMonth && !isSelected && 'bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-500/25',
+                    cellBgCls,
                   )}
                 >
                   {/* Top row: date number + WFO/WFH badge */}
@@ -382,14 +397,21 @@ export default function CalendarPage() {
                       'text-sm font-bold leading-none',
                       isSelected  ? 'text-violet-700 dark:text-violet-300'
                       : isTodays  ? 'text-indigo-900 dark:text-white'
+                      : weekend   ? 'text-rose-600 dark:text-rose-400'
                       :             'text-slate-700 dark:text-slate-300'
                     )}>
                       {format(day, 'd')}
                     </span>
                     {statusLabel && (
-                      <span className={cn('text-[8px] font-black uppercase tracking-widest leading-none mt-0.5', statusCls)}>
-                        {statusLabel}
-                      </span>
+                      statusIsPill ? (
+                        <span className={cn('text-[7px] font-black uppercase tracking-widest leading-none px-1.5 py-0.5 rounded-full', statusCls)}>
+                          {statusLabel}
+                        </span>
+                      ) : (
+                        <span className={cn('text-[8px] font-black uppercase tracking-widest leading-none mt-0.5', statusCls)}>
+                          {statusLabel}
+                        </span>
+                      )
                     )}
                   </div>
 
@@ -595,6 +617,13 @@ export default function CalendarPage() {
                   <h3 className="font-black text-indigo-900 dark:text-white text-lg leading-tight">
                     {format(modalDate, 'MMMM do, yyyy')}
                   </h3>
+                  {modalIsWeekend && (
+                    <div className="mt-1.5">
+                      <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-300 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40">
+                        ● Leave Day
+                      </span>
+                    </div>
+                  )}
                   {!modalIsWeekend && (
                     <div className="mt-1.5 flex items-center gap-2">
                       <span className={cn(
@@ -676,29 +705,33 @@ export default function CalendarPage() {
                     )
                   })()}
 
-                  {/* Call schedule */}
-                  <button onClick={() => setModalView('add-schedule')}
-                    className={cn(OPT_BASE, 'hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-500/15 dark:hover:border-blue-500/40')}>
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-400/30">
-                      <Phone size={16} className="text-white" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-indigo-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">Add Call Schedule</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">Schedule a meeting or call</p>
-                    </div>
-                  </button>
+                  {!modalIsWeekend && (
+                    <>
+                      {/* Call schedule */}
+                      <button onClick={() => setModalView('add-schedule')}
+                        className={cn(OPT_BASE, 'hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-500/15 dark:hover:border-blue-500/40')}>
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-400/30">
+                          <Phone size={16} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-indigo-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">Add Call Schedule</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">Schedule a meeting or call</p>
+                        </div>
+                      </button>
 
-                  {/* Todo */}
-                  <button onClick={() => setModalView('add-todo')}
-                    className={cn(OPT_BASE, 'hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-emerald-500/15 dark:hover:border-emerald-500/40')}>
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-400/30">
-                      <CheckSquare size={16} className="text-white" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-indigo-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">Add Todo</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">Add a checklist item for this day</p>
-                    </div>
-                  </button>
+                      {/* Todo */}
+                      <button onClick={() => setModalView('add-todo')}
+                        className={cn(OPT_BASE, 'hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-emerald-500/15 dark:hover:border-emerald-500/40')}>
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-400/30">
+                          <CheckSquare size={16} className="text-white" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-indigo-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">Add Todo</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">Add a checklist item for this day</p>
+                        </div>
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
 
