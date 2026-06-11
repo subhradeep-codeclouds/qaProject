@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Header from '@/components/Header'
 import {
   Calendar, Video, Clock, Users, ChevronLeft, ChevronRight,
   AlertCircle, Plus, CheckSquare, X, Phone, Briefcase, Home,
-  Building2, StickyNote, Trash2, ExternalLink, Pencil
+  Building2, StickyNote, Trash2, ExternalLink, Pencil, Camera, Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -78,6 +78,29 @@ export default function CalendarPage() {
   const [notes, setNotes]               = useState<DayNote[]>([])
   const [selectedDay, setSelectedDay]   = useState(new Date())
   const [googleConnected]               = useState(false)
+
+  const calendarRef                     = useRef<HTMLDivElement>(null)
+  const [snapping, setSnapping]         = useState(false)
+
+  async function takeSnapshot() {
+    if (!calendarRef.current || snapping) return
+    setSnapping(true)
+    try {
+      const html2canvas = (await import('html2canvas')).default
+      const canvas = await html2canvas(calendarRef.current, {
+        useCORS: true,
+        scale: 2,
+        backgroundColor: null,
+        logging: false,
+      })
+      const link = document.createElement('a')
+      link.download = `calendar-${format(currentMonth, 'yyyy-MM')}.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    } finally {
+      setSnapping(false)
+    }
+  }
   const [workStatus, setWorkStatus]     = useState<WorkStatus>({})
 
   const [showModal, setShowModal] = useState(false)
@@ -107,22 +130,64 @@ export default function CalendarPage() {
   const [newTodoForView, setNewTodoForView]   = useState('')
 
   useEffect(() => {
-    const load = <T,>(key: string, setter: (v: T) => void) => {
-      const raw = localStorage.getItem(key)
-      if (raw) try { setter(JSON.parse(raw)) } catch { /* ignore */ }
+    async function loadData() {
+      try {
+        const res = await fetch('/api/calendar/data')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.todos?.length)      setTodos(data.todos)
+          if (data.userEvents?.length) setUserEvents(data.userEvents)
+          if (Object.keys(data.workStatus ?? {}).length) setWorkStatus(data.workStatus)
+          if (data.notes?.length)      setNotes(data.notes)
+          localStorage.setItem('qa_portal_todos',       JSON.stringify(data.todos       ?? []))
+          localStorage.setItem('qa_portal_user_events', JSON.stringify(data.userEvents  ?? []))
+          localStorage.setItem('qa_portal_work_status', JSON.stringify(data.workStatus  ?? {}))
+          localStorage.setItem('qa_portal_notes',       JSON.stringify(data.notes       ?? []))
+          return
+        }
+      } catch { /* fall through to localStorage */ }
+      const load = <T,>(key: string, setter: (v: T) => void) => {
+        const raw = localStorage.getItem(key)
+        if (raw) try { setter(JSON.parse(raw)) } catch { /* ignore */ }
+      }
+      load<Todo[]>('qa_portal_todos', setTodos)
+      load<CalEvent[]>('qa_portal_user_events', setUserEvents)
+      load<WorkStatus>('qa_portal_work_status', setWorkStatus)
+      load<DayNote[]>('qa_portal_notes', setNotes)
     }
-    load<Todo[]>('qa_portal_todos', setTodos)
-    load<CalEvent[]>('qa_portal_user_events', setUserEvents)
-    load<WorkStatus>('qa_portal_work_status', setWorkStatus)
-    load<DayNote[]>('qa_portal_notes', setNotes)
+    loadData()
   }, [])
 
   const allEvents = [...MOCK_EVENTS, ...userEvents]
 
-  function saveTodos(u: Todo[])          { setTodos(u);      localStorage.setItem('qa_portal_todos', JSON.stringify(u)) }
-  function saveUserEvents(u: CalEvent[]) { setUserEvents(u); localStorage.setItem('qa_portal_user_events', JSON.stringify(u)) }
-  function saveWorkStatus(u: WorkStatus) { setWorkStatus(u); localStorage.setItem('qa_portal_work_status', JSON.stringify(u)) }
-  function saveNotes(u: DayNote[])       { setNotes(u);      localStorage.setItem('qa_portal_notes', JSON.stringify(u)) }
+  function syncToDb(patch: { workStatus?: WorkStatus; notes?: DayNote[]; userEvents?: CalEvent[]; todos?: Todo[] }) {
+    fetch('/api/calendar/data', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    }).catch(() => { /* silent — localStorage already has the data */ })
+  }
+
+  function saveTodos(u: Todo[]) {
+    setTodos(u)
+    localStorage.setItem('qa_portal_todos', JSON.stringify(u))
+    syncToDb({ workStatus, notes, userEvents, todos: u })
+  }
+  function saveUserEvents(u: CalEvent[]) {
+    setUserEvents(u)
+    localStorage.setItem('qa_portal_user_events', JSON.stringify(u))
+    syncToDb({ workStatus, notes, userEvents: u, todos })
+  }
+  function saveWorkStatus(u: WorkStatus) {
+    setWorkStatus(u)
+    localStorage.setItem('qa_portal_work_status', JSON.stringify(u))
+    syncToDb({ workStatus: u, notes, userEvents, todos })
+  }
+  function saveNotes(u: DayNote[]) {
+    setNotes(u)
+    localStorage.setItem('qa_portal_notes', JSON.stringify(u))
+    syncToDb({ workStatus, notes: u, userEvents, todos })
+  }
 
   function toggleWFO(dateKey: string) {
     const u = { ...workStatus }
@@ -294,12 +359,26 @@ export default function CalendarPage() {
         )}
 
         {/* ── Month calendar ── */}
-        <div className="glass-card p-5">
+        <div className="glass-card p-5" ref={calendarRef}>
 
           {/* Month navigator */}
           <div className="flex items-center justify-between mb-5">
             <h3 className="font-bold text-white text-lg tracking-tight">{format(currentMonth, 'MMMM yyyy')}</h3>
             <div className="flex items-center gap-2">
+              <button
+                onClick={takeSnapshot}
+                disabled={snapping}
+                title="Take calendar snapshot"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border
+                  bg-violet-50 hover:bg-violet-100 text-violet-600 border-violet-200/80
+                  dark:bg-violet-500/10 dark:hover:bg-violet-500/20 dark:text-violet-300 dark:border-violet-500/25
+                  disabled:opacity-60"
+              >
+                {snapping
+                  ? <><Loader2 size={13} className="animate-spin" />Capturing...</>
+                  : <><Camera size={13} />Snapshot</>
+                }
+              </button>
               <button
                 onClick={() => setCurrentMonth(m => subMonths(m, 1))}
                 className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] flex items-center justify-center transition-colors border border-slate-200 dark:border-white/[0.08]"
@@ -377,14 +456,14 @@ export default function CalendarPage() {
               const visible  = chips.slice(0, 2)
               const overflow = chips.length - 2 + (todoCnt > 0 && chips.length >= 2 ? 1 : 0)
 
-              const cellBgCls = isSelected
-                ? 'bg-violet-100 dark:bg-violet-600/25 border border-violet-400/70 dark:border-violet-400/50'
-                : isTodays
-                  ? 'bg-violet-50/90 dark:bg-violet-500/[0.12] border border-violet-300/80 dark:border-violet-400/40'
-                  : dayWorkStatus === 'wfo' && isCurrentMonth
-                    ? 'bg-amber-100 dark:bg-amber-500/20 border-2 border-amber-400 dark:border-amber-500/60 shadow-sm shadow-amber-200/60 dark:shadow-amber-500/10'
-                    : dayWorkStatus === 'planned_wfo' && isCurrentMonth
-                      ? 'bg-orange-50 dark:bg-orange-500/[0.10] border border-orange-300/80 dark:border-orange-500/35'
+              const cellBgCls = dayWorkStatus === 'wfo' && isCurrentMonth
+                ? 'bg-amber-100 dark:bg-amber-500/20 border-2 border-amber-400 dark:border-amber-500/60 shadow-sm shadow-amber-200/60 dark:shadow-amber-500/10'
+                : dayWorkStatus === 'planned_wfo' && isCurrentMonth
+                  ? 'bg-orange-50 dark:bg-orange-500/[0.10] border border-orange-300/80 dark:border-orange-500/35'
+                  : isSelected
+                    ? 'bg-violet-100 dark:bg-violet-600/25 border border-violet-400/70 dark:border-violet-400/50'
+                    : isTodays
+                      ? 'bg-violet-50/90 dark:bg-violet-500/[0.12] border border-violet-300/80 dark:border-violet-400/40'
                       : weekend && isCurrentMonth
                         ? 'bg-rose-50 dark:bg-rose-500/[0.08] border border-rose-200/80 dark:border-rose-500/20 hover:bg-rose-100/70 dark:hover:bg-rose-500/[0.13]'
                         : !weekend && isCurrentMonth && pastOrToday
@@ -401,6 +480,7 @@ export default function CalendarPage() {
                     'rounded-xl transition-all min-h-[132px] flex flex-col items-stretch p-2 relative group text-left',
                     !isCurrentMonth && 'opacity-30',
                     cellBgCls,
+                    isSelected && dayWorkStatus && isCurrentMonth && 'ring-2 ring-violet-400/70 dark:ring-violet-400/60',
                   )}
                 >
                   {/* Top row: date number + WFO/WFH badge */}
@@ -408,11 +488,11 @@ export default function CalendarPage() {
                     <div className="flex flex-col items-start gap-0.5">
                       <span className={cn(
                         'text-sm font-bold leading-none',
-                        isSelected                                                       ? 'text-violet-700 dark:text-violet-300'
+                        dayWorkStatus === 'wfo' && isCurrentMonth                      ? 'text-amber-800 dark:text-amber-300'
+                        : dayWorkStatus === 'planned_wfo' && isCurrentMonth              ? 'text-orange-700 dark:text-orange-300'
+                        : isSelected                                                     ? 'text-violet-700 dark:text-violet-300'
                         : isTodays                                                       ? 'text-violet-900 dark:text-violet-200'
                         : weekend && isCurrentMonth                                      ? 'text-rose-600 dark:text-rose-400'
-                        : dayWorkStatus === 'wfo' && isCurrentMonth                      ? 'text-amber-800 dark:text-amber-300'
-                        : dayWorkStatus === 'planned_wfo' && isCurrentMonth              ? 'text-orange-700 dark:text-orange-300'
                         : !weekend && isCurrentMonth && pastOrToday                      ? 'text-emerald-800 dark:text-emerald-400'
                         : !weekend && isCurrentMonth && !pastOrToday                     ? 'text-emerald-700/70 dark:text-emerald-400/60'
                         :                                                                  'text-slate-700 dark:text-slate-300'

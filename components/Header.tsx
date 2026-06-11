@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Search, User, LogOut, Sun, Moon } from 'lucide-react'
+import { Bell, Search, User, LogOut, Sun, Moon, KeyRound, Lock, Eye, EyeOff, X, CheckCircle2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -11,6 +11,44 @@ export default function Header({ title }: { title: string }) {
   const router = useRouter()
   const [showMenu, setShowMenu] = useState(false)
   const { dark, toggle } = useTheme()
+
+  const [showChangePwd, setShowChangePwd] = useState(false)
+  const [cpCurrent, setCpCurrent]   = useState('')
+  const [cpNew, setCpNew]           = useState('')
+  const [cpConfirm, setCpConfirm]   = useState('')
+  const [cpShowPwd, setCpShowPwd]   = useState(false)
+  const [cpLoading, setCpLoading]   = useState(false)
+  const [cpError, setCpError]       = useState<string | null>(null)
+  const [cpDone, setCpDone]         = useState(false)
+
+  function openChangePwd() {
+    setShowMenu(false)
+    setCpCurrent(''); setCpNew(''); setCpConfirm('')
+    setCpError(null); setCpDone(false); setCpShowPwd(false)
+    setShowChangePwd(true)
+  }
+
+  async function handleChangePwd() {
+    setCpError(null)
+    if (!cpCurrent || !cpNew || !cpConfirm) { setCpError('All fields are required'); return }
+    if (cpNew.length < 6) { setCpError('New password must be at least 6 characters'); return }
+    if (cpNew !== cpConfirm) { setCpError('New passwords do not match'); return }
+    setCpLoading(true)
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: cpCurrent, newPassword: cpNew }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setCpError(data.error ?? 'Something went wrong'); return }
+      setCpDone(true)
+    } catch {
+      setCpError('Network error. Please try again.')
+    } finally {
+      setCpLoading(false)
+    }
+  }
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -126,6 +164,13 @@ export default function Header({ title }: { title: string }) {
                   <p className="text-[10px] text-indigo-400/70 dark:text-[#2d6a3e] mt-0.5">QA Management Portal</p>
                 </div>
                 <button
+                  onClick={openChangePwd}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors
+                    text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700
+                    dark:text-[#7ae28a] dark:hover:bg-[#0c2a10] dark:hover:text-[#d4f5d4]">
+                  <KeyRound size={14} /> Change Password
+                </button>
+                <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors
                     text-red-500 hover:bg-red-50 hover:text-red-600
@@ -137,6 +182,93 @@ export default function Header({ title }: { title: string }) {
           )}
         </div>
       </div>
+
+      {/* ── Change Password Modal ── */}
+      {showChangePwd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowChangePwd(false)} />
+          <div className="relative w-full max-w-sm rounded-3xl shadow-2xl p-6 z-10
+            bg-white dark:bg-[#071507] border border-indigo-100 dark:border-[#1e4a24]">
+
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', boxShadow: '0 4px 12px rgba(79,70,229,0.35)' }}>
+                  <KeyRound size={16} className="text-white" />
+                </div>
+                <h3 className="text-base font-black text-slate-800 dark:text-[#d4f5d4]">Change Password</h3>
+              </div>
+              <button onClick={() => setShowChangePwd(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 dark:hover:bg-[#0c2a10] transition-colors">
+                <X size={15} className="text-slate-400" />
+              </button>
+            </div>
+
+            {cpDone ? (
+              <div className="text-center py-4 space-y-3">
+                <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto">
+                  <CheckCircle2 size={28} className="text-emerald-500" />
+                </div>
+                <p className="font-black text-slate-800 dark:text-[#d4f5d4]">Password Updated!</p>
+                <p className="text-sm text-slate-400">Your password has been changed successfully.</p>
+                <button onClick={() => setShowChangePwd(false)}
+                  className="w-full py-2.5 rounded-xl text-white font-black text-sm mt-2"
+                  style={{ background: 'linear-gradient(135deg,#4f46e5,#7c3aed)' }}>
+                  Done
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {cpError && (
+                  <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40 rounded-xl px-3 py-2.5">
+                    <p className="text-sm text-red-600 dark:text-red-400 font-bold">{cpError}</p>
+                  </div>
+                )}
+                <div>
+                  <label className="label">Current Password</label>
+                  <div className="relative">
+                    <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input type={cpShowPwd ? 'text' : 'password'} value={cpCurrent}
+                      onChange={e => { setCpCurrent(e.target.value); setCpError(null) }}
+                      placeholder="Current password" className="input-field pl-10 pr-10" autoFocus />
+                    <button type="button" onClick={() => setCpShowPwd(s => !s)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-violet-500">
+                      {cpShowPwd ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="label">New Password</label>
+                  <div className="relative">
+                    <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input type={cpShowPwd ? 'text' : 'password'} value={cpNew}
+                      onChange={e => { setCpNew(e.target.value); setCpError(null) }}
+                      placeholder="Min. 6 characters" className="input-field pl-10" />
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Confirm New Password</label>
+                  <div className="relative">
+                    <Lock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input type={cpShowPwd ? 'text' : 'password'} value={cpConfirm}
+                      onChange={e => { setCpConfirm(e.target.value); setCpError(null) }}
+                      placeholder="Repeat new password" className="input-field pl-10"
+                      onKeyDown={e => e.key === 'Enter' && handleChangePwd()} />
+                  </div>
+                </div>
+                <button onClick={handleChangePwd} disabled={cpLoading}
+                  className="w-full py-3 rounded-xl text-white font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60 mt-1"
+                  style={{ background: 'linear-gradient(135deg,#4f46e5,#7c3aed)', boxShadow: '0 4px 14px rgba(79,70,229,0.35)' }}>
+                  {cpLoading
+                    ? <><div className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />Saving...</>
+                    : <><KeyRound size={15} />Update Password</>
+                  }
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   )
 }

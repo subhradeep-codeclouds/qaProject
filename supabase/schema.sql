@@ -3,6 +3,16 @@
 -- Run this in Supabase SQL Editor
 -- ===========================
 
+-- Per-user calendar data (work status, notes, events, todos) — cross-device sync
+CREATE TABLE IF NOT EXISTS user_calendar_data (
+  user_id     TEXT PRIMARY KEY,
+  work_status JSONB NOT NULL DEFAULT '{}',
+  notes       JSONB NOT NULL DEFAULT '[]',
+  user_events JSONB NOT NULL DEFAULT '[]',
+  todos       JSONB NOT NULL DEFAULT '[]',
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Projects
 CREATE TABLE IF NOT EXISTS projects (
   id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,

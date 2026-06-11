@@ -19,3 +19,21 @@ export async function sendOtpEmail(name: string, otp: string) {
     `,
   })
 }
+
+export async function sendForgotPasswordEmail(name: string, _email: string, otp: string) {
+  await resend.emails.send({
+    from:    'onboarding@resend.dev',
+    to:      process.env.RESEND_TO_EMAIL!,
+    subject: 'QADesk — Password Reset OTP',
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#f8fafc;border-radius:16px;">
+        <h2 style="color:#f97316;margin-bottom:8px;">Reset your password 🔐</h2>
+        <p style="color:#475569;">Hi ${name}, use the OTP below to reset your QADesk password. It expires in <strong>10 minutes</strong>.</p>
+        <div style="margin:32px 0;text-align:center;">
+          <span style="font-size:40px;font-weight:900;letter-spacing:12px;color:#1e293b;background:#ffedd5;padding:16px 28px;border-radius:12px;">${otp}</span>
+        </div>
+        <p style="color:#94a3b8;font-size:13px;">If you didn't request a password reset, ignore this email. Your password will remain unchanged.</p>
+      </div>
+    `,
+  })
+}
