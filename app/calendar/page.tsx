@@ -130,32 +130,44 @@ export default function CalendarPage() {
   const [newTodoForView, setNewTodoForView]   = useState('')
 
   useEffect(() => {
-    async function loadData() {
+    // Step 1: load localStorage immediately so the page isn't blank
+    const fromLocal = <T,>(key: string, fallback: T): T => {
+      try { return JSON.parse(localStorage.getItem(key) ?? 'null') ?? fallback } catch { return fallback }
+    }
+    const localStatus = fromLocal<WorkStatus>('qa_portal_work_status', {})
+    const localTodos  = fromLocal<Todo[]>('qa_portal_todos', [])
+    const localEvents = fromLocal<CalEvent[]>('qa_portal_user_events', [])
+    const localNotes  = fromLocal<DayNote[]>('qa_portal_notes', [])
+    if (Object.keys(localStatus).length) setWorkStatus(localStatus)
+    if (localTodos.length)               setTodos(localTodos)
+    if (localEvents.length)              setUserEvents(localEvents)
+    if (localNotes.length)               setNotes(localNotes)
+
+    // Step 2: fetch from API for cross-device sync — only override when API has real data
+    async function syncFromApi() {
       try {
         const res = await fetch('/api/calendar/data')
-        if (res.ok) {
-          const data = await res.json()
-          if (data.todos?.length)      setTodos(data.todos)
-          if (data.userEvents?.length) setUserEvents(data.userEvents)
-          if (Object.keys(data.workStatus ?? {}).length) setWorkStatus(data.workStatus)
-          if (data.notes?.length)      setNotes(data.notes)
-          localStorage.setItem('qa_portal_todos',       JSON.stringify(data.todos       ?? []))
-          localStorage.setItem('qa_portal_user_events', JSON.stringify(data.userEvents  ?? []))
-          localStorage.setItem('qa_portal_work_status', JSON.stringify(data.workStatus  ?? {}))
-          localStorage.setItem('qa_portal_notes',       JSON.stringify(data.notes       ?? []))
-          return
+        if (!res.ok) return
+        const data = await res.json()
+        if (Object.keys(data.workStatus ?? {}).length) {
+          setWorkStatus(data.workStatus)
+          localStorage.setItem('qa_portal_work_status', JSON.stringify(data.workStatus))
         }
-      } catch { /* fall through to localStorage */ }
-      const load = <T,>(key: string, setter: (v: T) => void) => {
-        const raw = localStorage.getItem(key)
-        if (raw) try { setter(JSON.parse(raw)) } catch { /* ignore */ }
-      }
-      load<Todo[]>('qa_portal_todos', setTodos)
-      load<CalEvent[]>('qa_portal_user_events', setUserEvents)
-      load<WorkStatus>('qa_portal_work_status', setWorkStatus)
-      load<DayNote[]>('qa_portal_notes', setNotes)
+        if (data.todos?.length) {
+          setTodos(data.todos)
+          localStorage.setItem('qa_portal_todos', JSON.stringify(data.todos))
+        }
+        if (data.userEvents?.length) {
+          setUserEvents(data.userEvents)
+          localStorage.setItem('qa_portal_user_events', JSON.stringify(data.userEvents))
+        }
+        if (data.notes?.length) {
+          setNotes(data.notes)
+          localStorage.setItem('qa_portal_notes', JSON.stringify(data.notes))
+        }
+      } catch { /* silent — localStorage data already loaded above */ }
     }
-    loadData()
+    syncFromApi()
   }, [])
 
   const allEvents = [...MOCK_EVENTS, ...userEvents]
