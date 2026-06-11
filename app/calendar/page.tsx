@@ -81,6 +81,7 @@ export default function CalendarPage() {
 
   const calendarRef                     = useRef<HTMLDivElement>(null)
   const [snapping, setSnapping]         = useState(false)
+  const [syncStatus, setSyncStatus]     = useState<'idle' | 'syncing' | 'ok' | 'error'>('idle')
 
   async function takeSnapshot() {
     if (!calendarRef.current || snapping) return
@@ -173,11 +174,20 @@ export default function CalendarPage() {
   const allEvents = [...MOCK_EVENTS, ...userEvents]
 
   function syncToDb(patch: { workStatus?: WorkStatus; notes?: DayNote[]; userEvents?: CalEvent[]; todos?: Todo[] }) {
+    setSyncStatus('syncing')
     fetch('/api/calendar/data', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(patch),
-    }).catch(() => { /* silent — localStorage already has the data */ })
+    })
+      .then(res => {
+        setSyncStatus(res.ok ? 'ok' : 'error')
+        setTimeout(() => setSyncStatus('idle'), 3000)
+      })
+      .catch(() => {
+        setSyncStatus('error')
+        setTimeout(() => setSyncStatus('idle'), 4000)
+      })
   }
 
   function saveTodos(u: Todo[]) {
@@ -375,7 +385,27 @@ export default function CalendarPage() {
 
           {/* Month navigator */}
           <div className="flex items-center justify-between mb-5">
-            <h3 className="font-bold text-white text-lg tracking-tight">{format(currentMonth, 'MMMM yyyy')}</h3>
+            <div className="flex items-center gap-2.5">
+              <h3 className="font-bold text-white text-lg tracking-tight">{format(currentMonth, 'MMMM yyyy')}</h3>
+              {syncStatus === 'syncing' && (
+                <span className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                  <Loader2 size={10} className="animate-spin" /> Syncing...
+                </span>
+              )}
+              {syncStatus === 'ok' && (
+                <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-500 dark:text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" /> Synced
+                </span>
+              )}
+              {syncStatus === 'error' && (
+                <span
+                  title="Sync failed — run the user_calendar_data SQL in Supabase dashboard to enable cross-browser sync"
+                  className="flex items-center gap-1 text-[10px] font-semibold text-red-400 cursor-help"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400" /> Sync failed
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={takeSnapshot}
