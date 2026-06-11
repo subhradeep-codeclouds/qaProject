@@ -7,7 +7,7 @@ import {
   Calendar, MessageSquare, Plus, ArrowRight,
   Newspaper, ExternalLink,
   ChevronRight, ChevronDown, ChevronUp, Clock,
-  RefreshCw, CheckSquare, X
+  RefreshCw, CheckSquare, X, Briefcase, Building2
 } from 'lucide-react'
 import { supabase, type Project } from '@/lib/supabase'
 import { getProjectGradient, cn } from '@/lib/utils'
@@ -189,6 +189,7 @@ export default function Dashboard() {
   const [todos, setTodos] = useState<Todo[]>([])
   const [showAddTodo, setShowAddTodo] = useState(false)
   const [newTodoText, setNewTodoText] = useState('')
+  const [upcomingWFO, setUpcomingWFO] = useState<string[]>([])
   const { text: shiftText, pct: shiftPct } = useShiftCountdown()
   const greeting = getGreeting()
 
@@ -201,6 +202,18 @@ export default function Dashboard() {
     const stored = localStorage.getItem('qa_portal_todos')
     if (stored) {
       try { setTodos(JSON.parse(stored)) } catch { /* ignore */ }
+    }
+    const storedWS = localStorage.getItem('qa_portal_work_status')
+    if (storedWS) {
+      try {
+        const ws = JSON.parse(storedWS) as Record<string, string>
+        const todayStr = format(new Date(), 'yyyy-MM-dd')
+        const upcoming = Object.entries(ws)
+          .filter(([dateKey, status]) => status === 'planned_wfo' && dateKey > todayStr)
+          .map(([dateKey]) => dateKey)
+          .sort()
+        setUpcomingWFO(upcoming)
+      } catch { /* ignore */ }
     }
   }, [])
 
@@ -478,6 +491,57 @@ export default function Dashboard() {
                 </Link>
               ))}
             </div>
+
+            {/* Upcoming Office Days */}
+            {upcomingWFO.length > 0 && (
+              <div className="card p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md shadow-violet-500/30">
+                    <Building2 size={13} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-indigo-900 dark:text-white">Upcoming Office Days</p>
+                    <p className="text-[10px] text-indigo-400 dark:text-slate-500">Planned WFO visits</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {upcomingWFO.slice(0, 5).map(dateKey => {
+                    const [y, m, d] = dateKey.split('-').map(Number)
+                    const date = new Date(y, m - 1, d)
+                    const isThisWeek = (date.getTime() - new Date().getTime()) < 7 * 24 * 60 * 60 * 1000
+                    return (
+                      <Link key={dateKey} href="/calendar">
+                        <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200/60 dark:border-violet-500/20 hover:border-violet-400/60 dark:hover:border-violet-400/40 transition-all group cursor-pointer">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                            <Briefcase size={13} className="text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-violet-800 dark:text-violet-300 truncate">
+                              {format(date, 'EEE, MMM do')}
+                            </p>
+                            <p className="text-[10px] text-violet-500 dark:text-violet-400/60">
+                              {format(date, 'yyyy')}
+                            </p>
+                          </div>
+                          {isThisWeek && (
+                            <span className="text-[9px] font-black uppercase tracking-wider text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-500/20 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                              Soon
+                            </span>
+                          )}
+                        </div>
+                      </Link>
+                    )
+                  })}
+                  {upcomingWFO.length > 5 && (
+                    <Link href="/calendar">
+                      <p className="text-xs text-center text-indigo-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-slate-300 transition-colors pt-1">
+                        +{upcomingWFO.length - 5} more → View Calendar
+                      </p>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

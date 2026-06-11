@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Header from '@/components/Header'
 import {
   Calendar, Video, Clock, Users, ChevronLeft, ChevronRight,
-  AlertCircle, Plus, CheckSquare, X, Phone
+  AlertCircle, Plus, CheckSquare, X, Phone, Briefcase, Home, Building2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -25,6 +25,7 @@ type CalEvent = {
 }
 
 type Todo = { id: string; text: string; completed: boolean; date: string }
+type WorkStatus = Record<string, 'wfo' | 'planned_wfo'>
 
 const MOCK_EVENTS: CalEvent[] = [
   {
@@ -56,12 +57,21 @@ const MOCK_EVENTS: CalEvent[] = [
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
+function isWeekend(day: Date) {
+  return [0, 6].includes(day.getDay())
+}
+
+function isPastOrToday(day: Date) {
+  return format(day, 'yyyy-MM-dd') <= format(new Date(), 'yyyy-MM-dd')
+}
+
 export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [userEvents, setUserEvents] = useState<CalEvent[]>([])
   const [todos, setTodos] = useState<Todo[]>([])
   const [selectedDay, setSelectedDay] = useState(new Date())
   const [googleConnected] = useState(false)
+  const [workStatus, setWorkStatus] = useState<WorkStatus>({})
 
   const [showModal, setShowModal] = useState(false)
   const [modalDate, setModalDate] = useState<Date>(new Date())
@@ -81,6 +91,10 @@ export default function CalendarPage() {
     if (storedEvents) {
       try { setUserEvents(JSON.parse(storedEvents)) } catch { /* ignore */ }
     }
+    const storedWS = localStorage.getItem('qa_portal_work_status')
+    if (storedWS) {
+      try { setWorkStatus(JSON.parse(storedWS)) } catch { /* ignore */ }
+    }
   }, [])
 
   const allEvents = [...MOCK_EVENTS, ...userEvents]
@@ -93,6 +107,31 @@ export default function CalendarPage() {
   function saveUserEvents(updated: CalEvent[]) {
     setUserEvents(updated)
     localStorage.setItem('qa_portal_user_events', JSON.stringify(updated))
+  }
+
+  function saveWorkStatus(updated: WorkStatus) {
+    setWorkStatus(updated)
+    localStorage.setItem('qa_portal_work_status', JSON.stringify(updated))
+  }
+
+  function toggleWFO(dateKey: string) {
+    const updated = { ...workStatus }
+    if (updated[dateKey] === 'wfo') {
+      delete updated[dateKey]
+    } else {
+      updated[dateKey] = 'wfo'
+    }
+    saveWorkStatus(updated)
+  }
+
+  function togglePlannedWFO(dateKey: string) {
+    const updated = { ...workStatus }
+    if (updated[dateKey] === 'planned_wfo') {
+      delete updated[dateKey]
+    } else {
+      updated[dateKey] = 'planned_wfo'
+    }
+    saveWorkStatus(updated)
   }
 
   function toggleTodo(id: string) {
@@ -143,6 +182,14 @@ export default function CalendarPage() {
   const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
   const allDays = eachDayOfInterval({ start: calStart, end: calEnd })
 
+  // Monthly stats
+  const allMonthWeekdays = eachDayOfInterval({ start: monthStart, end: monthEnd }).filter(d => !isWeekend(d))
+  const doneWeekdays = allMonthWeekdays.filter(d => isPastOrToday(d))
+  const futureWeekdays = allMonthWeekdays.filter(d => !isPastOrToday(d))
+  const wfoDoneCount = doneWeekdays.filter(d => workStatus[format(d, 'yyyy-MM-dd')] === 'wfo').length
+  const wfhDoneCount = doneWeekdays.length - wfoDoneCount
+  const plannedWFOCount = futureWeekdays.filter(d => workStatus[format(d, 'yyyy-MM-dd')] === 'planned_wfo').length
+
   const selectedDateKey = format(selectedDay, 'yyyy-MM-dd')
   const dayEvents = allEvents.filter(e => isSameDay(new Date(e.start), selectedDay))
   const dayTodos = todos.filter(t => t.date === selectedDateKey)
@@ -156,6 +203,11 @@ export default function CalendarPage() {
     if (mins < 60) return `${mins}m`
     return `${Math.floor(mins / 60)}h${mins % 60 ? ` ${mins % 60}m` : ''}`
   }
+
+  const modalDateKey = format(modalDate, 'yyyy-MM-dd')
+  const modalIsWeekend = isWeekend(modalDate)
+  const modalIsPast = isPastOrToday(modalDate)
+  const modalWorkStatus = workStatus[modalDateKey]
 
   return (
     <div>
@@ -224,17 +276,41 @@ export default function CalendarPage() {
               const isTodays = isToday(day)
               const evCount = allEvents.filter(e => isSameDay(new Date(e.start), day)).length
               const todoCnt = todos.filter(t => t.date === format(day, 'yyyy-MM-dd')).length
+              const dateKey = format(day, 'yyyy-MM-dd')
+              const dayWorkStatus = workStatus[dateKey]
+              const weekend = isWeekend(day)
+              const pastOrToday = isPastOrToday(day)
+
+              let statusLabel = ''
+              let statusClass = ''
+              if (!weekend && isCurrentMonth) {
+                if (dayWorkStatus === 'wfo') {
+                  statusLabel = 'WFO'
+                  statusClass = 'text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.7)]'
+                } else if (dayWorkStatus === 'planned_wfo') {
+                  statusLabel = 'OFFICE'
+                  statusClass = 'text-violet-400 drop-shadow-[0_0_6px_rgba(167,139,250,0.7)]'
+                } else if (pastOrToday) {
+                  statusLabel = 'WFH'
+                  statusClass = 'text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.5)]'
+                } else {
+                  statusLabel = 'WFH'
+                  statusClass = 'text-emerald-400/50'
+                }
+              }
 
               return (
                 <button
                   key={day.toISOString()}
                   onClick={() => openModalForDate(day)}
                   className={cn(
-                    'p-1.5 rounded-xl text-center transition-all min-h-[56px] flex flex-col items-center justify-start pt-2 relative group',
+                    'p-1.5 rounded-xl text-center transition-all min-h-[82px] flex flex-col items-center justify-start pt-2 relative group',
                     !isCurrentMonth && 'opacity-30',
                     isSelected && 'bg-violet-600/25 border border-violet-400/50',
                     !isSelected && isTodays && 'bg-white/[0.08] border border-white/[0.15]',
                     !isSelected && !isTodays && 'hover:bg-white/[0.05] border border-transparent',
+                    dayWorkStatus === 'wfo' && isCurrentMonth && !isSelected && 'bg-amber-500/10 border-amber-500/30',
+                    dayWorkStatus === 'planned_wfo' && isCurrentMonth && !isSelected && 'bg-violet-500/10 border-violet-500/30',
                   )}
                 >
                   <p className={cn(
@@ -243,6 +319,17 @@ export default function CalendarPage() {
                   )}>
                     {format(day, 'd')}
                   </p>
+
+                  {/* Work status label */}
+                  {statusLabel && (
+                    <span className={cn(
+                      'text-[9px] font-black uppercase tracking-widest mt-1.5 leading-none',
+                      statusClass
+                    )}>
+                      {statusLabel}
+                    </span>
+                  )}
+
                   {(evCount > 0 || todoCnt > 0) && (
                     <div className="flex items-center justify-center gap-0.5 mt-1.5 flex-wrap">
                       {Array.from({ length: Math.min(evCount, 3) }).map((_, i) => (
@@ -260,7 +347,7 @@ export default function CalendarPage() {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-5 mt-4 pt-4 border-t border-white/[0.06]">
+          <div className="flex items-center gap-5 mt-4 pt-4 border-t border-white/[0.06] flex-wrap">
             <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
               <div className="w-2 h-2 rounded-full bg-violet-400" />
               Events / Calls
@@ -268,6 +355,57 @@ export default function CalendarPage() {
             <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
               Todos
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-amber-400/80 font-black uppercase tracking-wider">
+              WFO
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-emerald-400/80 font-black uppercase tracking-wider">
+              WFH
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-violet-400/80 font-black uppercase tracking-wider">
+              OFFICE
+            </div>
+          </div>
+
+          {/* Monthly WFO Stats */}
+          <div className="mt-4 pt-4 border-t border-white/[0.06]">
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
+              {format(currentMonth, 'MMMM yyyy')} — Work Summary
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <Building2 size={14} className="text-amber-400" />
+                </div>
+                <p className="text-2xl font-black text-amber-400 leading-none drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]">
+                  {wfoDoneCount}
+                </p>
+                <p className="text-[9px] font-bold text-amber-400/60 uppercase tracking-widest mt-1">
+                  WFO Done
+                </p>
+              </div>
+              <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <Home size={14} className="text-emerald-400" />
+                </div>
+                <p className="text-2xl font-black text-emerald-400 leading-none drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">
+                  {wfhDoneCount}
+                </p>
+                <p className="text-[9px] font-bold text-emerald-400/60 uppercase tracking-widest mt-1">
+                  WFH Done
+                </p>
+              </div>
+              <div className="rounded-xl bg-violet-500/10 border border-violet-500/20 p-3 text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <Briefcase size={14} className="text-violet-400" />
+                </div>
+                <p className="text-2xl font-black text-violet-400 leading-none drop-shadow-[0_0_8px_rgba(167,139,250,0.5)]">
+                  {plannedWFOCount}
+                </p>
+                <p className="text-[9px] font-bold text-violet-400/60 uppercase tracking-widest mt-1">
+                  Need WFO
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -406,6 +544,24 @@ export default function CalendarPage() {
                 <h3 className="font-bold text-white text-base">
                   {format(modalDate, 'MMMM do, yyyy')}
                 </h3>
+                {/* Current work status badge in modal header */}
+                {!modalIsWeekend && (
+                  <div className="flex items-center gap-1.5 mt-1">
+                    {modalWorkStatus === 'wfo' ? (
+                      <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
+                        ● WFO
+                      </span>
+                    ) : modalWorkStatus === 'planned_wfo' ? (
+                      <span className="text-[10px] font-black text-violet-400 uppercase tracking-widest">
+                        ● OFFICE PLANNED
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">
+                        ● WFH
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => setShowModal(false)}
@@ -418,6 +574,81 @@ export default function CalendarPage() {
             {/* Options */}
             {modalView === 'options' && (
               <div className="space-y-2">
+                {/* WFO / WFH toggle — only for weekdays */}
+                {!modalIsWeekend && (
+                  <button
+                    onClick={() => {
+                      if (modalIsPast) {
+                        toggleWFO(modalDateKey)
+                      } else {
+                        togglePlannedWFO(modalDateKey)
+                      }
+                      setShowModal(false)
+                    }}
+                    className={cn(
+                      'w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.04] border border-white/[0.06] transition-all text-left group',
+                      modalIsPast
+                        ? modalWorkStatus === 'wfo'
+                          ? 'hover:bg-emerald-500/15 hover:border-emerald-500/40'
+                          : 'hover:bg-amber-500/15 hover:border-amber-500/40'
+                        : modalWorkStatus === 'planned_wfo'
+                          ? 'hover:bg-red-500/15 hover:border-red-500/40'
+                          : 'hover:bg-violet-500/15 hover:border-violet-500/40'
+                    )}
+                  >
+                    <div className={cn(
+                      'w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg',
+                      modalIsPast
+                        ? modalWorkStatus === 'wfo'
+                          ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/20'
+                          : 'bg-gradient-to-br from-amber-500 to-orange-600 shadow-amber-500/20'
+                        : modalWorkStatus === 'planned_wfo'
+                          ? 'bg-gradient-to-br from-slate-500 to-slate-600'
+                          : 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-violet-500/20'
+                    )}>
+                      {modalIsPast
+                        ? modalWorkStatus === 'wfo'
+                          ? <Home size={15} className="text-white" />
+                          : <Building2 size={15} className="text-white" />
+                        : modalWorkStatus === 'planned_wfo'
+                          ? <X size={15} className="text-white" />
+                          : <Briefcase size={15} className="text-white" />
+                      }
+                    </div>
+                    <div>
+                      <p className={cn(
+                        'text-sm font-semibold text-white transition-colors',
+                        modalIsPast
+                          ? modalWorkStatus === 'wfo'
+                            ? 'group-hover:text-emerald-300'
+                            : 'group-hover:text-amber-300'
+                          : modalWorkStatus === 'planned_wfo'
+                            ? 'group-hover:text-red-300'
+                            : 'group-hover:text-violet-300'
+                      )}>
+                        {modalIsPast
+                          ? modalWorkStatus === 'wfo'
+                            ? 'Mark as WFH'
+                            : 'Mark as WFO'
+                          : modalWorkStatus === 'planned_wfo'
+                            ? 'Remove Office Plan'
+                            : 'Plan Office Day'
+                        }
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {modalIsPast
+                          ? modalWorkStatus === 'wfo'
+                            ? 'Change back to work from home'
+                            : 'Mark this day as worked from office'
+                          : modalWorkStatus === 'planned_wfo'
+                            ? 'Remove the planned office visit'
+                            : 'Mark this future date as need to go to office'
+                        }
+                      </p>
+                    </div>
+                  </button>
+                )}
+
                 <button
                   onClick={() => setModalView('add-schedule')}
                   className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.04] hover:bg-blue-500/15 border border-white/[0.06] hover:border-blue-500/40 transition-all text-left group"
