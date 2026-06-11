@@ -499,11 +499,6 @@ export default function CalendarPage() {
                       )}>
                         {format(day, 'd')}
                       </span>
-                      {isTodays && (
-                        <span className="text-[7px] font-black uppercase tracking-wider leading-none px-1 py-0.5 rounded-md bg-violet-500 text-white dark:bg-violet-500 dark:text-white">
-                          Today
-                        </span>
-                      )}
                     </div>
                     {statusLabel && (
                       statusIsPill ? (
