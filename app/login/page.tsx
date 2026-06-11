@@ -204,19 +204,13 @@ export default function LoginPage() {
     else setFpError(data.error ?? 'Failed to send OTP')
   }
 
-  async function handleVerifyForgotOtp() {
-    if (!fpOtp.trim()) { setFpError('Please enter the OTP.'); return }
-    setFpLoading(true); setFpError(null)
-    const res  = await fetch('/api/auth/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: fpUserId, otp: fpOtp, newPassword: 'VERIFY_ONLY' }) })
-    const data = await res.json()
-    setFpLoading(false)
-    // We only want to verify the OTP here, not reset yet — use a lightweight check
-    // Actually just move to reset view; final reset call will re-verify OTP
-    if (res.ok || data.error === 'Password must be at least 6 characters') {
-      setFpView('forgot-reset')
-    } else {
-      setFpError(data.error ?? 'Invalid OTP')
-    }
+  function handleVerifyForgotOtp() {
+    const trimmed = fpOtp.trim()
+    if (!trimmed)              { setFpError('Please enter the OTP.'); return }
+    if (!/^\d{6}$/.test(trimmed)) { setFpError('OTP must be a 6-digit number.'); return }
+    setFpOtp(trimmed)
+    setFpError(null)
+    setFpView('forgot-reset')
   }
 
   async function handleResetPassword() {
