@@ -62,33 +62,7 @@ const OPT_BASE  = 'w-full flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 d
 
 const NOTE_COLOR_KEYS: NoteColor[] = ['blue', 'pink', 'amber', 'green', 'purple']
 
-const MOCK_EVENTS: CalEvent[] = [
-  {
-    id: '1', title: 'Daily Standup',
-    start: new Date().toISOString().replace(/T.*/, 'T09:00:00'),
-    end:   new Date().toISOString().replace(/T.*/, 'T09:30:00'),
-    attendees: 6, meetLink: '#', type: 'event',
-  },
-  {
-    id: '2', title: 'Sprint Planning',
-    start: new Date().toISOString().replace(/T.*/, 'T11:00:00'),
-    end:   new Date().toISOString().replace(/T.*/, 'T12:00:00'),
-    attendees: 12, meetLink: '#', type: 'event',
-    description: 'Plan sprint tasks for next 2 weeks',
-  },
-  {
-    id: '3', title: 'QA Review - E-Commerce',
-    start: addDays(new Date(), 1).toISOString().replace(/T.*/, 'T14:00:00'),
-    end:   addDays(new Date(), 1).toISOString().replace(/T.*/, 'T15:00:00'),
-    attendees: 4, meetLink: '#', type: 'event',
-  },
-  {
-    id: '4', title: 'Bug Triage Meeting',
-    start: addDays(new Date(), 2).toISOString().replace(/T.*/, 'T10:00:00'),
-    end:   addDays(new Date(), 2).toISOString().replace(/T.*/, 'T10:30:00'),
-    attendees: 8, type: 'event',
-  },
-]
+const MOCK_EVENTS: CalEvent[] = []
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -345,14 +319,14 @@ export default function CalendarPage() {
                   statusCls    = 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/25 dark:text-amber-300 dark:border-amber-500/50'
                   statusIsPill = true
                 } else if (dayWorkStatus === 'planned_wfo') {
-                  statusLabel = 'OFFICE'
-                  statusCls   = 'text-violet-700 dark:text-violet-400 dark:drop-shadow-[0_0_5px_rgba(167,139,250,0.7)]'
+                  statusLabel = 'NEED TO GO'
+                  statusCls   = 'text-orange-700 dark:text-orange-400 dark:drop-shadow-[0_0_5px_rgba(251,146,60,0.8)] !tracking-tight'
                 } else if (pastOrToday) {
                   statusLabel = 'WFH'
-                  statusCls   = 'text-emerald-600/60 dark:text-emerald-400/45'
+                  statusCls   = 'text-emerald-700 dark:text-emerald-400'
                 } else {
                   statusLabel = 'WFH'
-                  statusCls   = 'text-emerald-400/40 dark:text-emerald-400/30'
+                  statusCls   = 'text-emerald-500/50 dark:text-emerald-400/35'
                 }
               }
 
@@ -372,14 +346,18 @@ export default function CalendarPage() {
               const cellBgCls = isSelected
                 ? 'bg-violet-100 dark:bg-violet-600/25 border border-violet-400/70 dark:border-violet-400/50'
                 : isTodays
-                  ? 'bg-indigo-50 dark:bg-white/[0.08] border border-indigo-300/80 dark:border-white/[0.18]'
+                  ? 'bg-violet-50/90 dark:bg-violet-500/[0.12] border border-violet-300/80 dark:border-violet-400/40'
                   : dayWorkStatus === 'wfo' && isCurrentMonth
                     ? 'bg-amber-100 dark:bg-amber-500/20 border-2 border-amber-400 dark:border-amber-500/60 shadow-sm shadow-amber-200/60 dark:shadow-amber-500/10'
                     : dayWorkStatus === 'planned_wfo' && isCurrentMonth
-                      ? 'bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/25'
+                      ? 'bg-orange-50 dark:bg-orange-500/[0.10] border border-orange-300/80 dark:border-orange-500/35'
                       : weekend && isCurrentMonth
                         ? 'bg-rose-50 dark:bg-rose-500/[0.08] border border-rose-200/80 dark:border-rose-500/20 hover:bg-rose-100/70 dark:hover:bg-rose-500/[0.13]'
-                        : 'hover:bg-slate-50 dark:hover:bg-white/[0.05] border border-transparent hover:border-slate-200 dark:hover:border-white/[0.08]'
+                        : !weekend && isCurrentMonth && pastOrToday
+                          ? 'bg-emerald-50 dark:bg-emerald-500/[0.09] border border-emerald-200 dark:border-emerald-500/25 hover:bg-emerald-100/70 dark:hover:bg-emerald-500/[0.13]'
+                          : !weekend && isCurrentMonth && !pastOrToday
+                            ? 'bg-emerald-50/50 dark:bg-emerald-500/[0.04] border border-emerald-200/50 dark:border-emerald-500/15 hover:bg-emerald-50/80 dark:hover:bg-emerald-500/[0.08]'
+                            : 'hover:bg-slate-50 dark:hover:bg-white/[0.05] border border-transparent hover:border-slate-200 dark:hover:border-white/[0.08]'
 
               return (
                 <button
@@ -395,10 +373,14 @@ export default function CalendarPage() {
                   <div className="flex items-start justify-between mb-1.5">
                     <span className={cn(
                       'text-sm font-bold leading-none',
-                      isSelected  ? 'text-violet-700 dark:text-violet-300'
-                      : isTodays  ? 'text-indigo-900 dark:text-white'
-                      : weekend   ? 'text-rose-600 dark:text-rose-400'
-                      :             'text-slate-700 dark:text-slate-300'
+                      isSelected                                                       ? 'text-violet-700 dark:text-violet-300'
+                      : isTodays                                                       ? 'text-violet-900 dark:text-violet-200'
+                      : weekend && isCurrentMonth                                      ? 'text-rose-600 dark:text-rose-400'
+                      : dayWorkStatus === 'wfo' && isCurrentMonth                      ? 'text-amber-800 dark:text-amber-300'
+                      : dayWorkStatus === 'planned_wfo' && isCurrentMonth              ? 'text-orange-700 dark:text-orange-300'
+                      : !weekend && isCurrentMonth && pastOrToday                      ? 'text-emerald-800 dark:text-emerald-400'
+                      : !weekend && isCurrentMonth && !pastOrToday                     ? 'text-emerald-700/70 dark:text-emerald-400/60'
+                      :                                                                  'text-slate-700 dark:text-slate-300'
                     )}>
                       {format(day, 'd')}
                     </span>
@@ -464,10 +446,10 @@ export default function CalendarPage() {
                 <p className="text-2xl font-black text-emerald-700 dark:text-emerald-400 leading-none dark:drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">{wfhDoneCount}</p>
                 <p className="text-[9px] font-bold text-emerald-600/70 dark:text-emerald-400/60 uppercase tracking-widest mt-1">WFH Done</p>
               </div>
-              <div className="rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 p-3 text-center">
-                <Briefcase size={14} className="text-violet-600 dark:text-violet-400 mx-auto mb-1" />
-                <p className="text-2xl font-black text-violet-700 dark:text-violet-400 leading-none dark:drop-shadow-[0_0_8px_rgba(167,139,250,0.5)]">{plannedWFOCount}</p>
-                <p className="text-[9px] font-bold text-violet-600/70 dark:text-violet-400/60 uppercase tracking-widest mt-1">Need WFO</p>
+              <div className="rounded-xl bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 p-3 text-center">
+                <Briefcase size={14} className="text-orange-600 dark:text-orange-400 mx-auto mb-1" />
+                <p className="text-2xl font-black text-orange-700 dark:text-orange-400 leading-none dark:drop-shadow-[0_0_8px_rgba(251,146,60,0.5)]">{plannedWFOCount}</p>
+                <p className="text-[9px] font-bold text-orange-600/70 dark:text-orange-400/60 uppercase tracking-widest mt-1">Need WFO</p>
               </div>
             </div>
           </div>
@@ -631,10 +613,10 @@ export default function CalendarPage() {
                         modalWorkStatus === 'wfo'
                           ? 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40'
                           : modalWorkStatus === 'planned_wfo'
-                            ? 'bg-violet-100 text-violet-800 border-violet-300 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-500/40'
+                            ? 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-500/40'
                             : 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40'
                       )}>
-                        {modalWorkStatus === 'wfo' ? '● WFO' : modalWorkStatus === 'planned_wfo' ? '● OFFICE PLANNED' : '● WFH'}
+                        {modalWorkStatus === 'wfo' ? '● WFO' : modalWorkStatus === 'planned_wfo' ? '● NEED TO GO OFFICE' : '● WFH'}
                       </span>
                     </div>
                   )}
@@ -675,10 +657,10 @@ export default function CalendarPage() {
                         : 'hover:bg-amber-50 hover:border-amber-300 dark:hover:bg-amber-500/15 dark:hover:border-amber-500/40'
                       : isPlanned
                         ? 'hover:bg-red-50 hover:border-red-300 dark:hover:bg-red-500/15 dark:hover:border-red-500/40'
-                        : 'hover:bg-violet-50 hover:border-violet-300 dark:hover:bg-violet-500/15 dark:hover:border-violet-500/40'
+                        : 'hover:bg-orange-50 hover:border-orange-300 dark:hover:bg-orange-500/15 dark:hover:border-orange-500/40'
                     const iconBg = modalIsPast
                       ? isWFO   ? 'from-emerald-500 to-teal-600'   : 'from-amber-500 to-orange-600'
-                      : isPlanned ? 'from-slate-400 to-slate-500' : 'from-violet-500 to-purple-600'
+                      : isPlanned ? 'from-slate-400 to-slate-500' : 'from-orange-500 to-amber-600'
                     return (
                       <button
                         onClick={() => { modalIsPast ? toggleWFO(modalDateKey) : togglePlannedWFO(modalDateKey); setShowModal(false) }}
