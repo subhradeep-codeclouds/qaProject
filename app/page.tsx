@@ -7,7 +7,7 @@ import {
   Calendar, MessageSquare, Plus, ArrowRight,
   Newspaper, ExternalLink,
   ChevronRight, ChevronDown, ChevronUp, Clock,
-  RefreshCw, CheckSquare, X, Briefcase, Building2
+  RefreshCw, CheckSquare, X, Briefcase, Building2, StickyNote
 } from 'lucide-react'
 import { supabase, type Project } from '@/lib/supabase'
 import { getProjectGradient, cn } from '@/lib/utils'
@@ -190,6 +190,9 @@ export default function Dashboard() {
   const [showAddTodo, setShowAddTodo] = useState(false)
   const [newTodoText, setNewTodoText] = useState('')
   const [upcomingWFO, setUpcomingWFO] = useState<string[]>([])
+  const [upcomingCalItems, setUpcomingCalItems] = useState<
+    Array<{ dateKey: string; notes: Array<{ text: string; color: string }>; events: Array<{ title: string }> }>
+  >([])
   const { text: shiftText, pct: shiftPct } = useShiftCountdown()
   const greeting = getGreeting()
 
@@ -215,6 +218,34 @@ export default function Dashboard() {
         setUpcomingWFO(upcoming)
       } catch { /* ignore */ }
     }
+
+    // Load future notes and user events for dashboard
+    const todayStr = format(new Date(), 'yyyy-MM-dd')
+    const notesRaw = localStorage.getItem('qa_portal_notes')
+    const eventsRaw = localStorage.getItem('qa_portal_user_events')
+    type RawNote  = { id: string; date: string; text: string; color: string }
+    type RawEvent = { id: string; title: string; start: string }
+    const futureNotes: RawNote[]  = notesRaw  ? (() => { try { return JSON.parse(notesRaw)  } catch { return [] } })() : []
+    const futureEvts:  RawEvent[] = eventsRaw ? (() => { try { return JSON.parse(eventsRaw) } catch { return [] } })() : []
+
+    const dateMap: Record<string, { notes: Array<{ text: string; color: string }>; events: Array<{ title: string }> }> = {}
+    for (const n of futureNotes) {
+      if (n.date > todayStr) {
+        if (!dateMap[n.date]) dateMap[n.date] = { notes: [], events: [] }
+        dateMap[n.date].notes.push({ text: n.text, color: n.color })
+      }
+    }
+    for (const e of futureEvts) {
+      const dk = e.start.slice(0, 10)
+      if (dk > todayStr) {
+        if (!dateMap[dk]) dateMap[dk] = { notes: [], events: [] }
+        dateMap[dk].events.push({ title: e.title })
+      }
+    }
+    const calItems = Object.entries(dateMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([dateKey, val]) => ({ dateKey, ...val }))
+    setUpcomingCalItems(calItems)
   }, [])
 
   function saveTodosToStorage(updated: Todo[]) {
@@ -491,6 +522,75 @@ export default function Dashboard() {
                 </Link>
               ))}
             </div>
+
+            {/* Upcoming Calendar Events & Notes */}
+            {upcomingCalItems.length > 0 && (
+              <div className="card p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-500 to-cyan-600 flex items-center justify-center shadow-md shadow-sky-500/30">
+                    <StickyNote size={13} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-indigo-900 dark:text-white">Upcoming Notes & Events</p>
+                    <p className="text-[10px] text-indigo-400 dark:text-slate-500">Future calendar entries</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {upcomingCalItems.slice(0, 4).map(item => {
+                    const [y, m, d] = item.dateKey.split('-').map(Number)
+                    const date = new Date(y, m - 1, d)
+                    const isThisWeek = (date.getTime() - new Date().getTime()) < 7 * 24 * 60 * 60 * 1000
+                    const NOTE_CHIP: Record<string, string> = {
+                      blue:   'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300',
+                      pink:   'bg-pink-100 text-pink-700 dark:bg-pink-500/20 dark:text-pink-300',
+                      amber:  'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
+                      green:  'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300',
+                      purple: 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300',
+                    }
+                    return (
+                      <Link key={item.dateKey} href="/calendar">
+                        <div className="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-500/10 border border-sky-200/60 dark:border-sky-500/20 hover:border-sky-400/60 dark:hover:border-sky-400/40 transition-all cursor-pointer">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-xs font-bold text-sky-800 dark:text-sky-300">
+                              {format(date, 'EEE, MMM do yyyy')}
+                            </span>
+                            {isThisWeek && (
+                              <span className="text-[9px] font-black uppercase tracking-wider text-sky-600 dark:text-sky-400 bg-sky-100 dark:bg-sky-500/20 px-1.5 py-0.5 rounded-full">
+                                Soon
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {item.notes.slice(0, 2).map((n, i) => (
+                              <span key={i} className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-full truncate max-w-[140px]', NOTE_CHIP[n.color] ?? NOTE_CHIP.blue)}>
+                                {n.text}
+                              </span>
+                            ))}
+                            {item.events.slice(0, 2).map((e, i) => (
+                              <span key={i} className="text-[10px] font-semibold px-2 py-0.5 rounded-full truncate max-w-[140px] bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">
+                                {e.title}
+                              </span>
+                            ))}
+                            {(item.notes.length + item.events.length) > 4 && (
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 py-0.5">
+                                +{item.notes.length + item.events.length - 4} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                  {upcomingCalItems.length > 4 && (
+                    <Link href="/calendar">
+                      <p className="text-xs text-center text-indigo-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-slate-300 transition-colors pt-1">
+                        +{upcomingCalItems.length - 4} more dates → View Calendar
+                      </p>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Upcoming Office Days */}
             {upcomingWFO.length > 0 && (
