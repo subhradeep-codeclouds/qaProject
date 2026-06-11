@@ -319,8 +319,8 @@ export default function CalendarPage() {
                   statusCls    = 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/25 dark:text-amber-300 dark:border-amber-500/50'
                   statusIsPill = true
                 } else if (dayWorkStatus === 'planned_wfo') {
-                  statusLabel = 'NEED TO GO'
-                  statusCls   = 'text-orange-700 dark:text-orange-400 dark:drop-shadow-[0_0_5px_rgba(251,146,60,0.8)] !tracking-tight'
+                  statusLabel = 'NEED TO GO OFFICE'
+                  statusCls   = 'text-orange-700 dark:text-orange-400 dark:drop-shadow-[0_0_5px_rgba(251,146,60,0.8)]'
                 } else if (pastOrToday) {
                   statusLabel = 'WFH'
                   statusCls   = 'text-emerald-700 dark:text-emerald-400'
@@ -371,22 +371,33 @@ export default function CalendarPage() {
                 >
                   {/* Top row: date number + WFO/WFH badge */}
                   <div className="flex items-start justify-between mb-1.5">
-                    <span className={cn(
-                      'text-sm font-bold leading-none',
-                      isSelected                                                       ? 'text-violet-700 dark:text-violet-300'
-                      : isTodays                                                       ? 'text-violet-900 dark:text-violet-200'
-                      : weekend && isCurrentMonth                                      ? 'text-rose-600 dark:text-rose-400'
-                      : dayWorkStatus === 'wfo' && isCurrentMonth                      ? 'text-amber-800 dark:text-amber-300'
-                      : dayWorkStatus === 'planned_wfo' && isCurrentMonth              ? 'text-orange-700 dark:text-orange-300'
-                      : !weekend && isCurrentMonth && pastOrToday                      ? 'text-emerald-800 dark:text-emerald-400'
-                      : !weekend && isCurrentMonth && !pastOrToday                     ? 'text-emerald-700/70 dark:text-emerald-400/60'
-                      :                                                                  'text-slate-700 dark:text-slate-300'
-                    )}>
-                      {format(day, 'd')}
-                    </span>
+                    <div className="flex flex-col items-start gap-0.5">
+                      <span className={cn(
+                        'text-sm font-bold leading-none',
+                        isSelected                                                       ? 'text-violet-700 dark:text-violet-300'
+                        : isTodays                                                       ? 'text-violet-900 dark:text-violet-200'
+                        : weekend && isCurrentMonth                                      ? 'text-rose-600 dark:text-rose-400'
+                        : dayWorkStatus === 'wfo' && isCurrentMonth                      ? 'text-amber-800 dark:text-amber-300'
+                        : dayWorkStatus === 'planned_wfo' && isCurrentMonth              ? 'text-orange-700 dark:text-orange-300'
+                        : !weekend && isCurrentMonth && pastOrToday                      ? 'text-emerald-800 dark:text-emerald-400'
+                        : !weekend && isCurrentMonth && !pastOrToday                     ? 'text-emerald-700/70 dark:text-emerald-400/60'
+                        :                                                                  'text-slate-700 dark:text-slate-300'
+                      )}>
+                        {format(day, 'd')}
+                      </span>
+                      {isTodays && (
+                        <span className="text-[7px] font-black uppercase tracking-wider leading-none px-1 py-0.5 rounded-md bg-violet-500 text-white dark:bg-violet-500 dark:text-white">
+                          Today
+                        </span>
+                      )}
+                    </div>
                     {statusLabel && (
                       statusIsPill ? (
                         <span className={cn('text-[7px] font-black uppercase tracking-widest leading-none px-1.5 py-0.5 rounded-full', statusCls)}>
+                          {statusLabel}
+                        </span>
+                      ) : statusLabel.length > 8 ? (
+                        <span className={cn('text-[7px] font-black uppercase tracking-tight leading-tight mt-0.5 text-right max-w-[48px]', statusCls)}>
                           {statusLabel}
                         </span>
                       ) : (
