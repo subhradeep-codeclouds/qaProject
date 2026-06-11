@@ -5,7 +5,7 @@ import Header from '@/components/Header'
 import {
   Calendar, Video, Clock, Users, ChevronLeft, ChevronRight,
   AlertCircle, Plus, CheckSquare, X, Phone, Briefcase, Home,
-  Building2, StickyNote, Trash2
+  Building2, StickyNote, Trash2, ExternalLink, Pencil
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -19,18 +19,46 @@ type CalEvent = {
   meetLink?: string; attendees?: number; description?: string
   type?: 'event' | 'schedule'
 }
-type Todo    = { id: string; text: string; completed: boolean; date: string }
+type Todo       = { id: string; text: string; completed: boolean; date: string }
 type WorkStatus = Record<string, 'wfo' | 'planned_wfo'>
 type NoteColor  = 'blue' | 'pink' | 'amber' | 'green' | 'purple'
 type DayNote    = { id: string; date: string; text: string; color: NoteColor }
 
+/* ── Color palette: light + dark variants for every note colour ── */
 const NOTE_COLORS: Record<NoteColor, { chip: string; border: string; swatch: string; label: string }> = {
-  blue:   { chip: 'bg-blue-500/20 text-blue-200',     border: 'border-blue-400/50',    swatch: 'bg-blue-500',    label: 'Blue'   },
-  pink:   { chip: 'bg-pink-500/20 text-pink-200',     border: 'border-pink-400/50',    swatch: 'bg-pink-500',    label: 'Pink'   },
-  amber:  { chip: 'bg-amber-500/20 text-amber-200',   border: 'border-amber-400/50',   swatch: 'bg-amber-500',   label: 'Amber'  },
-  green:  { chip: 'bg-emerald-500/20 text-emerald-200', border: 'border-emerald-400/50', swatch: 'bg-emerald-500', label: 'Green'  },
-  purple: { chip: 'bg-violet-500/20 text-violet-200', border: 'border-violet-400/50',  swatch: 'bg-violet-500',  label: 'Purple' },
+  blue:   {
+    chip:   'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200',
+    border: 'border-blue-300 dark:border-blue-400/50',
+    swatch: 'bg-blue-500', label: 'Blue',
+  },
+  pink:   {
+    chip:   'bg-pink-100 text-pink-800 dark:bg-pink-500/20 dark:text-pink-200',
+    border: 'border-pink-300 dark:border-pink-400/50',
+    swatch: 'bg-pink-500', label: 'Pink',
+  },
+  amber:  {
+    chip:   'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200',
+    border: 'border-amber-300 dark:border-amber-400/50',
+    swatch: 'bg-amber-500', label: 'Amber',
+  },
+  green:  {
+    chip:   'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200',
+    border: 'border-emerald-300 dark:border-emerald-400/50',
+    swatch: 'bg-emerald-500', label: 'Green',
+  },
+  purple: {
+    chip:   'bg-violet-100 text-violet-800 dark:bg-violet-500/20 dark:text-violet-200',
+    border: 'border-violet-300 dark:border-violet-400/50',
+    swatch: 'bg-violet-500', label: 'Purple',
+  },
 }
+
+/* Event / Todo chips — readable in both modes */
+const EVENT_CHIP = 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-400/40'
+const TODO_CHIP  = 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-200 dark:border-emerald-400/40'
+
+/* Shared button-inside-glass-card base */
+const OPT_BASE  = 'w-full flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] transition-all text-left group'
 
 const NOTE_COLOR_KEYS: NoteColor[] = ['blue', 'pink', 'amber', 'green', 'purple']
 
@@ -80,14 +108,22 @@ export default function CalendarPage() {
 
   const [showModal, setShowModal] = useState(false)
   const [modalDate, setModalDate] = useState<Date>(new Date())
-  const [modalView, setModalView] = useState<'options' | 'add-schedule' | 'add-todo' | 'add-note'>('options')
+  const [modalView, setModalView] = useState<'options' | 'add-schedule' | 'add-todo' | 'add-note' | 'edit-note' | 'edit-event'>('options')
 
-  const [newTodoText, setNewTodoText]       = useState('')
-  const [scheduleTitle, setScheduleTitle]   = useState('')
-  const [scheduleStart, setScheduleStart]   = useState('09:00')
-  const [scheduleEnd, setScheduleEnd]       = useState('10:00')
-  const [noteText, setNoteText]             = useState('')
-  const [noteColor, setNoteColor]           = useState<NoteColor>('blue')
+  const [newTodoText, setNewTodoText]     = useState('')
+  const [scheduleTitle, setScheduleTitle] = useState('')
+  const [scheduleStart, setScheduleStart] = useState('09:00')
+  const [scheduleEnd, setScheduleEnd]     = useState('10:00')
+  const [noteText, setNoteText]           = useState('')
+  const [noteColor, setNoteColor]         = useState<NoteColor>('blue')
+
+  const [editNoteId, setEditNoteId]         = useState('')
+  const [editNoteText, setEditNoteText]     = useState('')
+  const [editNoteColor, setEditNoteColor]   = useState<NoteColor>('blue')
+  const [editEventId, setEditEventId]       = useState('')
+  const [editEventTitle, setEditEventTitle] = useState('')
+  const [editEventStart, setEditEventStart] = useState('09:00')
+  const [editEventEnd, setEditEventEnd]     = useState('10:00')
 
   useEffect(() => {
     const load = <T,>(key: string, setter: (v: T) => void) => {
@@ -102,10 +138,10 @@ export default function CalendarPage() {
 
   const allEvents = [...MOCK_EVENTS, ...userEvents]
 
-  function saveTodos(u: Todo[])            { setTodos(u);      localStorage.setItem('qa_portal_todos', JSON.stringify(u)) }
-  function saveUserEvents(u: CalEvent[])   { setUserEvents(u); localStorage.setItem('qa_portal_user_events', JSON.stringify(u)) }
-  function saveWorkStatus(u: WorkStatus)   { setWorkStatus(u); localStorage.setItem('qa_portal_work_status', JSON.stringify(u)) }
-  function saveNotes(u: DayNote[])         { setNotes(u);      localStorage.setItem('qa_portal_notes', JSON.stringify(u)) }
+  function saveTodos(u: Todo[])          { setTodos(u);      localStorage.setItem('qa_portal_todos', JSON.stringify(u)) }
+  function saveUserEvents(u: CalEvent[]) { setUserEvents(u); localStorage.setItem('qa_portal_user_events', JSON.stringify(u)) }
+  function saveWorkStatus(u: WorkStatus) { setWorkStatus(u); localStorage.setItem('qa_portal_work_status', JSON.stringify(u)) }
+  function saveNotes(u: DayNote[])       { setNotes(u);      localStorage.setItem('qa_portal_notes', JSON.stringify(u)) }
 
   function toggleWFO(dateKey: string) {
     const u = { ...workStatus }
@@ -142,6 +178,53 @@ export default function CalendarPage() {
     if (!noteText.trim()) return
     saveNotes([...notes, { id: Date.now().toString(), date: format(modalDate, 'yyyy-MM-dd'), text: noteText.trim(), color: noteColor }])
     setNoteText(''); setNoteColor('blue'); setShowModal(false)
+  }
+
+  function openEditNote(note: DayNote) {
+    setEditNoteId(note.id); setEditNoteText(note.text); setEditNoteColor(note.color)
+    setModalDate(new Date(note.date + 'T12:00:00'))
+    setModalView('edit-note'); setShowModal(true)
+  }
+  function saveEditNote() {
+    if (!editNoteText.trim()) return
+    saveNotes(notes.map(n => n.id === editNoteId ? { ...n, text: editNoteText.trim(), color: editNoteColor } : n))
+    setShowModal(false)
+  }
+  function deleteEditNote() {
+    saveNotes(notes.filter(n => n.id !== editNoteId))
+    setShowModal(false)
+  }
+
+  function openEditEvent(ev: CalEvent) {
+    setEditEventId(ev.id); setEditEventTitle(ev.title)
+    setEditEventStart(format(new Date(ev.start), 'HH:mm'))
+    setEditEventEnd(format(new Date(ev.end), 'HH:mm'))
+    setModalDate(new Date(ev.start))
+    setModalView('edit-event'); setShowModal(true)
+  }
+  function saveEditEvent() {
+    if (!editEventTitle.trim()) return
+    const dateStr = format(modalDate, 'yyyy-MM-dd')
+    saveUserEvents(userEvents.map(e => e.id === editEventId
+      ? { ...e, title: editEventTitle.trim(), start: `${dateStr}T${editEventStart}:00`, end: `${dateStr}T${editEventEnd}:00` }
+      : e
+    ))
+    setShowModal(false)
+  }
+  function deleteEditEvent() {
+    saveUserEvents(userEvents.filter(e => e.id !== editEventId))
+    setShowModal(false)
+  }
+
+  function handleChipClick(e: React.MouseEvent, id: string, kind: 'note' | 'event') {
+    e.stopPropagation()
+    if (kind === 'note') {
+      const note = notes.find(n => n.id === id)
+      if (note) openEditNote(note)
+    } else {
+      const ev = userEvents.find(ev => ev.id === id)
+      if (ev) openEditEvent(ev)
+    }
   }
 
   function openModalForDate(day: Date) {
@@ -193,28 +276,39 @@ export default function CalendarPage() {
               <p className="text-sm font-semibold text-blue-300">Connect Google Calendar</p>
               <p className="text-xs text-slate-400 mt-0.5">Add your Google OAuth credentials to .env to see real meetings.</p>
             </div>
-            <button className="btn-primary flex-shrink-0 text-xs"><Calendar size={13} /> Connect Google</button>
+            <div className="flex gap-2 flex-shrink-0">
+              <button className="btn-primary text-xs"><Calendar size={13} /> Connect Google</button>
+              <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer">
+                <button className="btn-secondary text-xs"><ExternalLink size={13} /> Open Google Calendar</button>
+              </a>
+            </div>
           </div>
         )}
 
-        {/* Month calendar */}
+        {/* ── Month calendar ── */}
         <div className="glass-card p-5">
 
           {/* Month navigator */}
           <div className="flex items-center justify-between mb-5">
             <h3 className="font-bold text-white text-lg tracking-tight">{format(currentMonth, 'MMMM yyyy')}</h3>
             <div className="flex items-center gap-2">
-              <button onClick={() => setCurrentMonth(m => subMonths(m, 1))}
-                className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center transition-colors border border-white/[0.06]">
-                <ChevronLeft size={15} className="text-slate-400" />
+              <button
+                onClick={() => setCurrentMonth(m => subMonths(m, 1))}
+                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] flex items-center justify-center transition-colors border border-slate-200 dark:border-white/[0.08]"
+              >
+                <ChevronLeft size={15} className="text-slate-500 dark:text-slate-400" />
               </button>
-              <button onClick={() => { setCurrentMonth(new Date()); setSelectedDay(new Date()) }}
-                className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-xs text-slate-300 font-medium transition-colors border border-white/[0.06]">
+              <button
+                onClick={() => { setCurrentMonth(new Date()); setSelectedDay(new Date()) }}
+                className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-xs text-slate-600 dark:text-slate-300 font-semibold transition-colors border border-slate-200 dark:border-white/[0.08]"
+              >
                 Today
               </button>
-              <button onClick={() => setCurrentMonth(m => addMonths(m, 1))}
-                className="w-8 h-8 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center transition-colors border border-white/[0.06]">
-                <ChevronRight size={15} className="text-slate-400" />
+              <button
+                onClick={() => setCurrentMonth(m => addMonths(m, 1))}
+                className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] flex items-center justify-center transition-colors border border-slate-200 dark:border-white/[0.08]"
+              >
+                <ChevronRight size={15} className="text-slate-500 dark:text-slate-400" />
               </button>
             </div>
           </div>
@@ -222,11 +316,11 @@ export default function CalendarPage() {
           {/* Day-of-week headers */}
           <div className="grid grid-cols-7 gap-1.5 mb-1">
             {DAY_LABELS.map(d => (
-              <div key={d} className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest py-1.5">{d}</div>
+              <div key={d} className="text-center text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest py-1.5">{d}</div>
             ))}
           </div>
 
-          {/* Day cells — taller to show chips */}
+          {/* Day cells */}
           <div className="grid grid-cols-7 gap-1.5">
             {allDays.map(day => {
               const isCurrentMonth = isSameMonth(day, currentMonth)
@@ -237,24 +331,33 @@ export default function CalendarPage() {
               const weekend        = isWeekend(day)
               const pastOrToday    = isPastOrToday(day)
 
-              // WFO status label
-              let statusLabel = ''; let statusClass = ''
+              // WFO/WFH status label + colour
+              let statusLabel = ''; let statusCls = ''
               if (!weekend && isCurrentMonth) {
-                if (dayWorkStatus === 'wfo')          { statusLabel = 'WFO';    statusClass = 'text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.7)]' }
-                else if (dayWorkStatus === 'planned_wfo') { statusLabel = 'OFFICE'; statusClass = 'text-violet-400 drop-shadow-[0_0_5px_rgba(167,139,250,0.7)]' }
-                else if (pastOrToday)                 { statusLabel = 'WFH';    statusClass = 'text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.5)]' }
-                else                                  { statusLabel = 'WFH';    statusClass = 'text-emerald-400/45' }
+                if (dayWorkStatus === 'wfo') {
+                  statusLabel = 'WFO'
+                  statusCls   = 'text-amber-700 dark:text-amber-400 dark:drop-shadow-[0_0_5px_rgba(251,191,36,0.7)]'
+                } else if (dayWorkStatus === 'planned_wfo') {
+                  statusLabel = 'OFFICE'
+                  statusCls   = 'text-violet-700 dark:text-violet-400 dark:drop-shadow-[0_0_5px_rgba(167,139,250,0.7)]'
+                } else if (pastOrToday) {
+                  statusLabel = 'WFH'
+                  statusCls   = 'text-emerald-700 dark:text-emerald-400 dark:drop-shadow-[0_0_4px_rgba(52,211,153,0.5)]'
+                } else {
+                  statusLabel = 'WFH'
+                  statusCls   = 'text-emerald-500/60 dark:text-emerald-400/45'
+                }
               }
 
-              // Chips to display inside cell
+              // Build chip list for this cell
               const cellNotes  = notes.filter(n => n.date === dateKey)
               const cellEvents = allEvents.filter(e => isSameDay(new Date(e.start), day))
               const todoCnt    = todos.filter(t => t.date === dateKey).length
 
-              type Chip = { id: string; label: string; cls: string }
+              type Chip = { id: string; label: string; cls: string; kind: 'note' | 'event' }
               const chips: Chip[] = [
-                ...cellNotes.map(n => ({ id: n.id,  label: n.text,  cls: `${NOTE_COLORS[n.color].chip} ${NOTE_COLORS[n.color].border}` })),
-                ...cellEvents.map(e => ({ id: e.id, label: e.title, cls: 'bg-indigo-500/20 text-indigo-200 border-indigo-400/40' })),
+                ...cellNotes.map(n  => ({ id: n.id, label: n.text,  cls: `${NOTE_COLORS[n.color].chip} ${NOTE_COLORS[n.color].border}`, kind: 'note' as const })),
+                ...cellEvents.map(e => ({ id: e.id, label: e.title, cls: EVENT_CHIP, kind: 'event' as const })),
               ]
               const visible  = chips.slice(0, 2)
               const overflow = chips.length - 2 + (todoCnt > 0 && chips.length >= 2 ? 1 : 0)
@@ -264,51 +367,58 @@ export default function CalendarPage() {
                   key={day.toISOString()}
                   onClick={() => openModalForDate(day)}
                   className={cn(
-                    'rounded-xl transition-all min-h-[120px] flex flex-col items-stretch p-1.5 relative group text-left',
+                    'rounded-xl transition-all min-h-[132px] flex flex-col items-stretch p-2 relative group text-left',
                     !isCurrentMonth && 'opacity-30',
-                    isSelected && 'bg-violet-600/25 border border-violet-400/50',
-                    !isSelected && isTodays && 'bg-white/[0.08] border border-white/[0.15]',
-                    !isSelected && !isTodays && 'hover:bg-white/[0.05] border border-transparent',
-                    dayWorkStatus === 'wfo' && isCurrentMonth && !isSelected && 'bg-amber-500/10 border-amber-500/25',
-                    dayWorkStatus === 'planned_wfo' && isCurrentMonth && !isSelected && 'bg-violet-500/10 border-violet-500/25',
+                    isSelected && 'bg-violet-100 dark:bg-violet-600/25 border border-violet-400/70 dark:border-violet-400/50',
+                    !isSelected && isTodays && 'bg-indigo-50 dark:bg-white/[0.08] border border-indigo-300/80 dark:border-white/[0.18]',
+                    !isSelected && !isTodays && 'hover:bg-slate-50 dark:hover:bg-white/[0.05] border border-transparent hover:border-slate-200 dark:hover:border-white/[0.08]',
+                    dayWorkStatus === 'wfo' && isCurrentMonth && !isSelected && 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/25',
+                    dayWorkStatus === 'planned_wfo' && isCurrentMonth && !isSelected && 'bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-500/25',
                   )}
                 >
                   {/* Top row: date number + WFO/WFH badge */}
-                  <div className="flex items-start justify-between mb-1 px-0.5 pt-0.5">
+                  <div className="flex items-start justify-between mb-1.5">
                     <span className={cn(
                       'text-sm font-bold leading-none',
-                      isSelected ? 'text-violet-300' : isTodays ? 'text-white' : 'text-slate-300'
+                      isSelected  ? 'text-violet-700 dark:text-violet-300'
+                      : isTodays  ? 'text-indigo-900 dark:text-white'
+                      :             'text-slate-700 dark:text-slate-300'
                     )}>
                       {format(day, 'd')}
                     </span>
                     {statusLabel && (
-                      <span className={cn('text-[8px] font-black uppercase tracking-widest leading-none mt-0.5', statusClass)}>
+                      <span className={cn('text-[8px] font-black uppercase tracking-widest leading-none mt-0.5', statusCls)}>
                         {statusLabel}
                       </span>
                     )}
                   </div>
 
                   {/* Note / event chips */}
-                  <div className="flex flex-col gap-0.5 flex-1">
+                  <div className="flex flex-col gap-1 flex-1">
                     {visible.map(chip => (
-                      <div key={chip.id}
-                        className={cn('text-[9px] font-semibold px-1.5 py-[3px] rounded-md truncate border leading-tight', chip.cls)}>
+                      <button
+                        key={chip.id}
+                        onClick={e => handleChipClick(e, chip.id, chip.kind)}
+                        className={cn('text-[10px] font-semibold px-1.5 py-1 rounded-md truncate border leading-tight text-left w-full hover:opacity-75 transition-opacity', chip.cls)}
+                      >
                         {chip.label}
-                      </div>
+                      </button>
                     ))}
-                    {/* Todo chip (compact) */}
+                    {/* Show todo chip only if there's room */}
                     {todoCnt > 0 && chips.length < 2 && (
-                      <div className="text-[9px] font-semibold px-1.5 py-[3px] rounded-md truncate border leading-tight bg-emerald-500/20 text-emerald-200 border-emerald-400/40">
+                      <div className={cn('text-[10px] font-semibold px-1.5 py-1 rounded-md truncate border leading-tight', TODO_CHIP)}>
                         {todoCnt} todo{todoCnt > 1 ? 's' : ''}
                       </div>
                     )}
                     {overflow > 0 && (
-                      <span className="text-[8px] text-slate-500 font-bold px-1 leading-none mt-0.5">+{overflow} more</span>
+                      <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold px-0.5 leading-none">
+                        +{overflow} more
+                      </span>
                     )}
                   </div>
 
                   {/* Hover add hint */}
-                  <span className="absolute bottom-1 right-1.5 text-[8px] text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="absolute bottom-1.5 right-2 text-[8px] text-slate-400 dark:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
                     + add
                   </span>
                 </button>
@@ -316,51 +426,32 @@ export default function CalendarPage() {
             })}
           </div>
 
-          {/* Legend */}
-          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-white/[0.06] flex-wrap">
-            <div className="flex items-center gap-1.5 text-[10px] text-indigo-300/70 font-semibold">
-              <div className="w-3 h-2.5 rounded-sm bg-indigo-500/30 border border-indigo-400/40" /> Events
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-emerald-300/70 font-semibold">
-              <div className="w-3 h-2.5 rounded-sm bg-emerald-500/30 border border-emerald-400/40" /> Todos
-            </div>
-            {NOTE_COLOR_KEYS.map(c => (
-              <div key={c} className="flex items-center gap-1.5 text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                <div className={cn('w-3 h-2.5 rounded-sm border', NOTE_COLORS[c].chip, NOTE_COLORS[c].border)} />
-                {NOTE_COLORS[c].label}
-              </div>
-            ))}
-            <div className="flex items-center gap-1.5 text-[10px] text-amber-400/70 font-black uppercase tracking-wider ml-2">WFO</div>
-            <div className="flex items-center gap-1.5 text-[10px] text-emerald-400/70 font-black uppercase tracking-wider">WFH</div>
-            <div className="flex items-center gap-1.5 text-[10px] text-violet-400/70 font-black uppercase tracking-wider">OFFICE</div>
-          </div>
-
           {/* Monthly WFO Stats */}
-          <div className="mt-4 pt-4 border-t border-white/[0.06]">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
+          <div className="mt-4 pt-4 border-t border-slate-200/70 dark:border-white/[0.06]">
+            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-500 uppercase tracking-widest mb-3">
               {format(currentMonth, 'MMMM yyyy')} — Work Summary
             </p>
             <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-center">
-                <Building2 size={14} className="text-amber-400 mx-auto mb-1" />
-                <p className="text-2xl font-black text-amber-400 leading-none drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]">{wfoDoneCount}</p>
-                <p className="text-[9px] font-bold text-amber-400/60 uppercase tracking-widest mt-1">WFO Done</p>
+              <div className="rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 p-3 text-center">
+                <Building2 size={14} className="text-amber-600 dark:text-amber-400 mx-auto mb-1" />
+                <p className="text-2xl font-black text-amber-700 dark:text-amber-400 leading-none dark:drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]">{wfoDoneCount}</p>
+                <p className="text-[9px] font-bold text-amber-600/70 dark:text-amber-400/60 uppercase tracking-widest mt-1">WFO Done</p>
               </div>
-              <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-center">
-                <Home size={14} className="text-emerald-400 mx-auto mb-1" />
-                <p className="text-2xl font-black text-emerald-400 leading-none drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">{wfhDoneCount}</p>
-                <p className="text-[9px] font-bold text-emerald-400/60 uppercase tracking-widest mt-1">WFH Done</p>
+              <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 p-3 text-center">
+                <Home size={14} className="text-emerald-600 dark:text-emerald-400 mx-auto mb-1" />
+                <p className="text-2xl font-black text-emerald-700 dark:text-emerald-400 leading-none dark:drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">{wfhDoneCount}</p>
+                <p className="text-[9px] font-bold text-emerald-600/70 dark:text-emerald-400/60 uppercase tracking-widest mt-1">WFH Done</p>
               </div>
-              <div className="rounded-xl bg-violet-500/10 border border-violet-500/20 p-3 text-center">
-                <Briefcase size={14} className="text-violet-400 mx-auto mb-1" />
-                <p className="text-2xl font-black text-violet-400 leading-none drop-shadow-[0_0_8px_rgba(167,139,250,0.5)]">{plannedWFOCount}</p>
-                <p className="text-[9px] font-bold text-violet-400/60 uppercase tracking-widest mt-1">Need WFO</p>
+              <div className="rounded-xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 p-3 text-center">
+                <Briefcase size={14} className="text-violet-600 dark:text-violet-400 mx-auto mb-1" />
+                <p className="text-2xl font-black text-violet-700 dark:text-violet-400 leading-none dark:drop-shadow-[0_0_8px_rgba(167,139,250,0.5)]">{plannedWFOCount}</p>
+                <p className="text-[9px] font-bold text-violet-600/70 dark:text-violet-400/60 uppercase tracking-widest mt-1">Need WFO</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Selected day panel */}
+        {/* ── Selected day panel ── */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-title">
@@ -376,29 +467,25 @@ export default function CalendarPage() {
             </button>
           </div>
 
-          {/* Notes & Events for the day */}
+          {/* Notes */}
           {dayNotes.length > 0 && (
             <div className="glass-card p-4 mb-4">
               <div className="flex items-center gap-2 mb-3">
-                <StickyNote size={14} className="text-sky-400 flex-shrink-0" />
+                <StickyNote size={14} className="text-sky-500 flex-shrink-0" />
                 <h4 className="text-sm font-bold text-white">Notes & Events</h4>
                 <span className="text-xs text-slate-500 ml-1">{dayNotes.length}</span>
               </div>
               <div className="space-y-2">
                 {dayNotes.map(note => (
                   <div key={note.id}
-                    className={cn(
-                      'flex items-start gap-3 p-3 rounded-xl border group',
-                      NOTE_COLORS[note.color].chip,
-                      NOTE_COLORS[note.color].border
-                    )}>
-                    <div className={cn('w-2 h-2 rounded-full mt-1.5 flex-shrink-0', NOTE_COLORS[note.color].swatch)} />
+                    className={cn('flex items-start gap-3 p-3 rounded-xl border group', NOTE_COLORS[note.color].chip, NOTE_COLORS[note.color].border)}>
+                    <div className={cn('w-2.5 h-2.5 rounded-full mt-1 flex-shrink-0', NOTE_COLORS[note.color].swatch)} />
                     <p className="flex-1 text-sm font-semibold leading-snug break-words">{note.text}</p>
                     <button
                       onClick={() => deleteNote(note.id)}
-                      className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-500/20 rounded-lg"
+                      className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg"
                     >
-                      <Trash2 size={12} className="text-red-400" />
+                      <Trash2 size={12} className="text-red-500 dark:text-red-400" />
                     </button>
                   </div>
                 ))}
@@ -406,7 +493,7 @@ export default function CalendarPage() {
             </div>
           )}
 
-          {/* Call schedules & events */}
+          {/* Events / calls */}
           {dayEvents.length > 0 && (
             <div className="space-y-3 mb-4">
               {dayEvents.map(ev => (
@@ -423,7 +510,7 @@ export default function CalendarPage() {
                           <div className="flex items-center gap-2">
                             <p className="font-semibold text-white">{ev.title}</p>
                             {ev.type === 'schedule' && (
-                              <span className="text-[9px] bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full px-1.5 py-0.5 font-bold">Call</span>
+                              <span className="text-[9px] bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-300 dark:border-blue-500/30 rounded-full px-1.5 py-0.5 font-bold">Call</span>
                             )}
                           </div>
                           {ev.description && <p className="text-sm text-slate-400 mt-0.5">{ev.description}</p>}
@@ -451,19 +538,19 @@ export default function CalendarPage() {
           {dayTodos.length > 0 && (
             <div className="glass-card p-4 mb-4">
               <div className="flex items-center gap-2 mb-3">
-                <CheckSquare size={14} className="text-emerald-400 flex-shrink-0" />
+                <CheckSquare size={14} className="text-emerald-500 flex-shrink-0" />
                 <h4 className="text-sm font-bold text-white">Todo Checklist</h4>
                 <span className="text-xs text-slate-500 ml-1">{dayTodos.filter(t => t.completed).length}/{dayTodos.length} done</span>
               </div>
               <div className="space-y-1">
                 {dayTodos.map(todo => (
-                  <label key={todo.id} className="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-white/[0.04] transition-colors">
+                  <label key={todo.id} className="flex items-center gap-3 cursor-pointer group p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-colors">
                     <input type="checkbox" checked={todo.completed} onChange={() => toggleTodo(todo.id)}
-                      className="accent-emerald-400 w-4 h-4 cursor-pointer flex-shrink-0" />
-                    <span className={cn('flex-1 text-sm', todo.completed ? 'line-through text-slate-500' : 'text-white')}>{todo.text}</span>
+                      className="accent-emerald-500 w-4 h-4 cursor-pointer flex-shrink-0" />
+                    <span className={cn('flex-1 text-sm', todo.completed ? 'line-through text-slate-400' : 'text-white')}>{todo.text}</span>
                     <button onClick={e => { e.preventDefault(); deleteTodo(todo.id) }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-500/20 rounded-lg">
-                      <X size={12} className="text-red-400" />
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg">
+                      <X size={12} className="text-red-500 dark:text-red-400" />
                     </button>
                   </label>
                 ))}
@@ -474,7 +561,7 @@ export default function CalendarPage() {
           {/* Empty state */}
           {dayEvents.length === 0 && dayTodos.length === 0 && dayNotes.length === 0 && (
             <div className="glass-card p-12 text-center">
-              <Calendar size={36} className="text-slate-500 mx-auto mb-3" />
+              <Calendar size={36} className="text-slate-400 mx-auto mb-3" />
               <p className="text-slate-400 mb-4">Nothing scheduled for this day.</p>
               <button onClick={() => { setModalDate(selectedDay); setModalView('options'); setShowModal(true) }} className="btn-primary mx-auto">
                 <Plus size={14} /> Add Something
@@ -484,194 +571,296 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* Day action modal */}
+      {/* ── Day action modal ── */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm" onClick={() => setShowModal(false)}>
-          <div className="glass-card w-full max-w-sm p-5 mx-4 animate-slide-up" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="w-full max-w-sm mx-4 animate-slide-up rounded-2xl shadow-2xl shadow-indigo-300/30 dark:shadow-black/60"
+            style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(24px)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Dark mode override for modal background */}
+            <div className="hidden dark:block absolute inset-0 rounded-2xl -z-10" style={{ background: '#0d1b0d', border: '1px solid #1e4a24' }} />
+            <div className="p-5">
 
-            {/* Modal header */}
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{format(modalDate, 'EEEE')}</p>
-                <h3 className="font-bold text-white text-base">{format(modalDate, 'MMMM do, yyyy')}</h3>
-                {!modalIsWeekend && (
-                  <div className="mt-1">
-                    {modalWorkStatus === 'wfo'
-                      ? <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">● WFO</span>
-                      : modalWorkStatus === 'planned_wfo'
-                        ? <span className="text-[10px] font-black text-violet-400 uppercase tracking-widest">● OFFICE PLANNED</span>
-                        : <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">● WFH</span>
-                    }
-                  </div>
-                )}
-              </div>
-              <button onClick={() => setShowModal(false)}
-                className="w-7 h-7 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] flex items-center justify-center transition-colors">
-                <X size={14} className="text-slate-400" />
-              </button>
-            </div>
-
-            {/* ── Options ── */}
-            {modalView === 'options' && (
-              <div className="space-y-2">
-
-                {/* Note / Event */}
-                <button onClick={() => setModalView('add-note')}
-                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.04] hover:bg-sky-500/15 border border-white/[0.06] hover:border-sky-500/40 transition-all text-left group">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-sky-500/20">
-                    <StickyNote size={15} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white group-hover:text-sky-300 transition-colors">Add Note / Event</p>
-                    <p className="text-xs text-slate-500">Add a note, reminder or event label</p>
-                  </div>
-                </button>
-
-                {/* WFO / WFH toggle */}
-                {!modalIsWeekend && (
-                  <button
-                    onClick={() => { modalIsPast ? toggleWFO(modalDateKey) : togglePlannedWFO(modalDateKey); setShowModal(false) }}
-                    className={cn(
-                      'w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.04] border border-white/[0.06] transition-all text-left group',
-                      modalIsPast
-                        ? modalWorkStatus === 'wfo' ? 'hover:bg-emerald-500/15 hover:border-emerald-500/40' : 'hover:bg-amber-500/15 hover:border-amber-500/40'
-                        : modalWorkStatus === 'planned_wfo' ? 'hover:bg-red-500/15 hover:border-red-500/40' : 'hover:bg-violet-500/15 hover:border-violet-500/40'
-                    )}>
-                    <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg',
-                      modalIsPast
-                        ? modalWorkStatus === 'wfo' ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/20' : 'bg-gradient-to-br from-amber-500 to-orange-600 shadow-amber-500/20'
-                        : modalWorkStatus === 'planned_wfo' ? 'bg-gradient-to-br from-slate-500 to-slate-600' : 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-violet-500/20'
-                    )}>
-                      {modalIsPast
-                        ? modalWorkStatus === 'wfo' ? <Home size={15} className="text-white" /> : <Building2 size={15} className="text-white" />
-                        : modalWorkStatus === 'planned_wfo' ? <X size={15} className="text-white" /> : <Briefcase size={15} className="text-white" />
-                      }
-                    </div>
-                    <div>
-                      <p className={cn('text-sm font-semibold text-white transition-colors',
-                        modalIsPast
-                          ? modalWorkStatus === 'wfo' ? 'group-hover:text-emerald-300' : 'group-hover:text-amber-300'
-                          : modalWorkStatus === 'planned_wfo' ? 'group-hover:text-red-300' : 'group-hover:text-violet-300'
+              {/* Modal header */}
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <p className="text-[10px] font-bold text-indigo-400 dark:text-slate-500 uppercase tracking-widest">
+                    {format(modalDate, 'EEEE')}
+                  </p>
+                  <h3 className="font-black text-indigo-900 dark:text-white text-lg leading-tight">
+                    {format(modalDate, 'MMMM do, yyyy')}
+                  </h3>
+                  {!modalIsWeekend && (
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <span className={cn(
+                        'text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border',
+                        modalWorkStatus === 'wfo'
+                          ? 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40'
+                          : modalWorkStatus === 'planned_wfo'
+                            ? 'bg-violet-100 text-violet-800 border-violet-300 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-500/40'
+                            : 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40'
                       )}>
-                        {modalIsPast ? (modalWorkStatus === 'wfo' ? 'Mark as WFH' : 'Mark as WFO') : (modalWorkStatus === 'planned_wfo' ? 'Remove Office Plan' : 'Plan Office Day')}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {modalIsPast ? (modalWorkStatus === 'wfo' ? 'Change back to work from home' : 'Mark this day as worked from office') : (modalWorkStatus === 'planned_wfo' ? 'Remove the planned office visit' : 'Mark as need to go to office')}
-                      </p>
-                    </div>
-                  </button>
-                )}
-
-                {/* Call schedule */}
-                <button onClick={() => setModalView('add-schedule')}
-                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.04] hover:bg-blue-500/15 border border-white/[0.06] hover:border-blue-500/40 transition-all text-left group">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/20">
-                    <Phone size={15} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white group-hover:text-blue-300 transition-colors">Add Call Schedule</p>
-                    <p className="text-xs text-slate-500">Schedule a meeting or call</p>
-                  </div>
-                </button>
-
-                {/* Todo */}
-                <button onClick={() => setModalView('add-todo')}
-                  className="w-full flex items-center gap-3 p-3.5 rounded-xl bg-white/[0.04] hover:bg-emerald-500/15 border border-white/[0.06] hover:border-emerald-500/40 transition-all text-left group">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/20">
-                    <CheckSquare size={15} className="text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white group-hover:text-emerald-300 transition-colors">Add Todo</p>
-                    <p className="text-xs text-slate-500">Add a checklist item for this day</p>
-                  </div>
-                </button>
-              </div>
-            )}
-
-            {/* ── Add Note form ── */}
-            {modalView === 'add-note' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="label">Note / Event Text</label>
-                  <textarea
-                    value={noteText}
-                    onChange={e => setNoteText(e.target.value)}
-                    placeholder="e.g. Team offsite, Leave day, Release deadline..."
-                    className="input-field resize-none h-24"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="label">Highlight Color</label>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    {NOTE_COLOR_KEYS.map(c => (
-                      <button
-                        key={c}
-                        onClick={() => setNoteColor(c)}
-                        title={NOTE_COLORS[c].label}
-                        className={cn(
-                          'w-8 h-8 rounded-full transition-all border-2',
-                          NOTE_COLORS[c].swatch,
-                          noteColor === c ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-60 hover:opacity-90'
-                        )}
-                      />
-                    ))}
-                    <span className="text-xs text-slate-400 ml-1">{NOTE_COLORS[noteColor].label}</span>
-                  </div>
-                  {/* Preview */}
-                  {noteText.trim() && (
-                    <div className={cn('mt-3 px-3 py-2 rounded-xl border text-sm font-semibold', NOTE_COLORS[noteColor].chip, NOTE_COLORS[noteColor].border)}>
-                      {noteText.trim()}
+                        {modalWorkStatus === 'wfo' ? '● WFO' : modalWorkStatus === 'planned_wfo' ? '● OFFICE PLANNED' : '● WFH'}
+                      </span>
                     </div>
                   )}
                 </div>
-                <div className="flex gap-2 pt-1">
-                  <button onClick={() => setModalView('options')} className="btn-secondary flex-1 justify-center">Back</button>
-                  <button onClick={addNote} className="btn-primary flex-1 justify-center">Save Note</button>
-                </div>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] flex items-center justify-center transition-colors border border-slate-200 dark:border-white/[0.08] flex-shrink-0"
+                >
+                  <X size={15} className="text-slate-500 dark:text-slate-400" />
+                </button>
               </div>
-            )}
 
-            {/* ── Add schedule form ── */}
-            {modalView === 'add-schedule' && (
-              <div className="space-y-3">
-                <div>
-                  <label className="label">Call / Meeting Title</label>
-                  <input value={scheduleTitle} onChange={e => setScheduleTitle(e.target.value)}
-                    placeholder="e.g. Sprint Review, QA Sync..." className="input-field" autoFocus />
+              {/* ── Options ── */}
+              {modalView === 'options' && (
+                <div className="space-y-2">
+
+                  {/* Note / Event */}
+                  <button onClick={() => setModalView('add-note')}
+                    className={cn(OPT_BASE, 'hover:bg-sky-50 hover:border-sky-300 dark:hover:bg-sky-500/15 dark:hover:border-sky-500/40')}>
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-sky-400/30">
+                      <StickyNote size={16} className="text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-indigo-900 dark:text-white group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors">
+                        Add Note / Event
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">Add a note, reminder or event label</p>
+                    </div>
+                  </button>
+
+                  {/* WFO / WFH toggle */}
+                  {!modalIsWeekend && (() => {
+                    const isWFO = modalIsPast && modalWorkStatus === 'wfo'
+                    const isPlanned = !modalIsPast && modalWorkStatus === 'planned_wfo'
+                    const hoverCls = modalIsPast
+                      ? isWFO
+                        ? 'hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-emerald-500/15 dark:hover:border-emerald-500/40'
+                        : 'hover:bg-amber-50 hover:border-amber-300 dark:hover:bg-amber-500/15 dark:hover:border-amber-500/40'
+                      : isPlanned
+                        ? 'hover:bg-red-50 hover:border-red-300 dark:hover:bg-red-500/15 dark:hover:border-red-500/40'
+                        : 'hover:bg-violet-50 hover:border-violet-300 dark:hover:bg-violet-500/15 dark:hover:border-violet-500/40'
+                    const iconBg = modalIsPast
+                      ? isWFO   ? 'from-emerald-500 to-teal-600'   : 'from-amber-500 to-orange-600'
+                      : isPlanned ? 'from-slate-400 to-slate-500' : 'from-violet-500 to-purple-600'
+                    return (
+                      <button
+                        onClick={() => { modalIsPast ? toggleWFO(modalDateKey) : togglePlannedWFO(modalDateKey); setShowModal(false) }}
+                        className={cn(OPT_BASE, hoverCls)}
+                      >
+                        <div className={cn('w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-md', iconBg)}>
+                          {modalIsPast
+                            ? isWFO ? <Home size={16} className="text-white" /> : <Building2 size={16} className="text-white" />
+                            : isPlanned ? <X size={16} className="text-white" /> : <Briefcase size={16} className="text-white" />
+                          }
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-indigo-900 dark:text-white transition-colors">
+                            {modalIsPast ? (isWFO ? 'Mark as WFH' : 'Mark as WFO') : (isPlanned ? 'Remove Office Plan' : 'Plan Office Day')}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">
+                            {modalIsPast
+                              ? isWFO ? 'Change back to work from home' : 'Mark this day as worked from office'
+                              : isPlanned ? 'Remove the planned office visit' : 'Mark as need to go to office'
+                            }
+                          </p>
+                        </div>
+                      </button>
+                    )
+                  })()}
+
+                  {/* Call schedule */}
+                  <button onClick={() => setModalView('add-schedule')}
+                    className={cn(OPT_BASE, 'hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-500/15 dark:hover:border-blue-500/40')}>
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-400/30">
+                      <Phone size={16} className="text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-indigo-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">Add Call Schedule</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">Schedule a meeting or call</p>
+                    </div>
+                  </button>
+
+                  {/* Todo */}
+                  <button onClick={() => setModalView('add-todo')}
+                    className={cn(OPT_BASE, 'hover:bg-emerald-50 hover:border-emerald-300 dark:hover:bg-emerald-500/15 dark:hover:border-emerald-500/40')}>
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-400/30">
+                      <CheckSquare size={16} className="text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-indigo-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">Add Todo</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">Add a checklist item for this day</p>
+                    </div>
+                  </button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+              )}
+
+              {/* ── Add Note form ── */}
+              {modalView === 'add-note' && (
+                <div className="space-y-4">
                   <div>
-                    <label className="label">Start Time</label>
-                    <input type="time" value={scheduleStart} onChange={e => setScheduleStart(e.target.value)} className="input-field" />
+                    <label className="label">Note / Event Text</label>
+                    <textarea
+                      value={noteText}
+                      onChange={e => setNoteText(e.target.value)}
+                      placeholder="e.g. Team offsite, Leave day, Release deadline..."
+                      className="input-field resize-none h-24"
+                      autoFocus
+                    />
                   </div>
                   <div>
-                    <label className="label">End Time</label>
-                    <input type="time" value={scheduleEnd} onChange={e => setScheduleEnd(e.target.value)} className="input-field" />
+                    <label className="label">Highlight Color</label>
+                    <div className="flex items-center gap-2.5 mt-2">
+                      {NOTE_COLOR_KEYS.map(c => (
+                        <button
+                          key={c}
+                          onClick={() => setNoteColor(c)}
+                          title={NOTE_COLORS[c].label}
+                          className={cn(
+                            'w-9 h-9 rounded-full transition-all border-2',
+                            NOTE_COLORS[c].swatch,
+                            noteColor === c ? 'border-slate-800 dark:border-white scale-110 shadow-lg' : 'border-transparent opacity-60 hover:opacity-90 hover:scale-105'
+                          )}
+                        />
+                      ))}
+                      <span className="text-xs font-semibold text-slate-500 ml-1">{NOTE_COLORS[noteColor].label}</span>
+                    </div>
+                    {noteText.trim() && (
+                      <div className={cn('mt-3 px-3 py-2.5 rounded-xl border text-sm font-semibold', NOTE_COLORS[noteColor].chip, NOTE_COLORS[noteColor].border)}>
+                        {noteText.trim()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={() => setModalView('options')} className="btn-secondary flex-1 justify-center">Back</button>
+                    <button onClick={addNote} className="btn-primary flex-1 justify-center">Save Note</button>
                   </div>
                 </div>
-                <div className="flex gap-2 pt-2">
-                  <button onClick={() => setModalView('options')} className="btn-secondary flex-1 justify-center">Back</button>
-                  <button onClick={addSchedule} className="btn-primary flex-1 justify-center">Add Schedule</button>
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* ── Add todo form ── */}
-            {modalView === 'add-todo' && (
-              <div className="space-y-3">
-                <div>
-                  <label className="label">Todo Item</label>
-                  <input value={newTodoText} onChange={e => setNewTodoText(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && addTodo()}
-                    placeholder="What needs to be done?" className="input-field" autoFocus />
+              {/* ── Add schedule form ── */}
+              {modalView === 'add-schedule' && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="label">Call / Meeting Title</label>
+                    <input value={scheduleTitle} onChange={e => setScheduleTitle(e.target.value)}
+                      placeholder="e.g. Sprint Review, QA Sync..." className="input-field" autoFocus />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Start Time</label>
+                      <input type="time" value={scheduleStart} onChange={e => setScheduleStart(e.target.value)} className="input-field" />
+                    </div>
+                    <div>
+                      <label className="label">End Time</label>
+                      <input type="time" value={scheduleEnd} onChange={e => setScheduleEnd(e.target.value)} className="input-field" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button onClick={() => setModalView('options')} className="btn-secondary flex-1 justify-center">Back</button>
+                    <button onClick={addSchedule} className="btn-primary flex-1 justify-center">Add Schedule</button>
+                  </div>
                 </div>
-                <div className="flex gap-2 pt-2">
-                  <button onClick={() => setModalView('options')} className="btn-secondary flex-1 justify-center">Back</button>
-                  <button onClick={addTodo} className="btn-primary flex-1 justify-center">Add Todo</button>
+              )}
+
+              {/* ── Add todo form ── */}
+              {modalView === 'add-todo' && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="label">Todo Item</label>
+                    <input value={newTodoText} onChange={e => setNewTodoText(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addTodo()}
+                      placeholder="What needs to be done?" className="input-field" autoFocus />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button onClick={() => setModalView('options')} className="btn-secondary flex-1 justify-center">Back</button>
+                    <button onClick={addTodo} className="btn-primary flex-1 justify-center">Add Todo</button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* ── Edit note form ── */}
+              {modalView === 'edit-note' && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Pencil size={14} className="text-sky-500" />
+                    <span className="text-xs font-bold text-indigo-900 dark:text-slate-300 uppercase tracking-widest">Edit Note</span>
+                  </div>
+                  <div>
+                    <label className="label">Note / Event Text</label>
+                    <textarea
+                      value={editNoteText}
+                      onChange={e => setEditNoteText(e.target.value)}
+                      className="input-field resize-none h-24"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Highlight Color</label>
+                    <div className="flex items-center gap-2.5 mt-2">
+                      {NOTE_COLOR_KEYS.map(c => (
+                        <button key={c} onClick={() => setEditNoteColor(c)} title={NOTE_COLORS[c].label}
+                          className={cn('w-9 h-9 rounded-full transition-all border-2', NOTE_COLORS[c].swatch,
+                            editNoteColor === c ? 'border-slate-800 dark:border-white scale-110 shadow-lg' : 'border-transparent opacity-60 hover:opacity-90 hover:scale-105'
+                          )} />
+                      ))}
+                      <span className="text-xs font-semibold text-slate-500 ml-1">{NOTE_COLORS[editNoteColor].label}</span>
+                    </div>
+                    {editNoteText.trim() && (
+                      <div className={cn('mt-3 px-3 py-2.5 rounded-xl border text-sm font-semibold', NOTE_COLORS[editNoteColor].chip, NOTE_COLORS[editNoteColor].border)}>
+                        {editNoteText.trim()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={deleteEditNote}
+                      className="btn-secondary flex-1 justify-center text-red-600 dark:text-red-400 hover:border-red-300 dark:hover:border-red-500/40">
+                      <Trash2 size={13} /> Delete
+                    </button>
+                    <button onClick={saveEditNote} className="btn-primary flex-1 justify-center">Save Changes</button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Edit event form ── */}
+              {modalView === 'edit-event' && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Pencil size={14} className="text-blue-500" />
+                    <span className="text-xs font-bold text-indigo-900 dark:text-slate-300 uppercase tracking-widest">Edit Call / Schedule</span>
+                  </div>
+                  <div>
+                    <label className="label">Call / Meeting Title</label>
+                    <input value={editEventTitle} onChange={e => setEditEventTitle(e.target.value)}
+                      className="input-field" autoFocus />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Start Time</label>
+                      <input type="time" value={editEventStart} onChange={e => setEditEventStart(e.target.value)} className="input-field" />
+                    </div>
+                    <div>
+                      <label className="label">End Time</label>
+                      <input type="time" value={editEventEnd} onChange={e => setEditEventEnd(e.target.value)} className="input-field" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button onClick={deleteEditEvent}
+                      className="btn-secondary flex-1 justify-center text-red-600 dark:text-red-400 hover:border-red-300 dark:hover:border-red-500/40">
+                      <Trash2 size={13} /> Delete
+                    </button>
+                    <button onClick={saveEditEvent} className="btn-primary flex-1 justify-center">Save Changes</button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

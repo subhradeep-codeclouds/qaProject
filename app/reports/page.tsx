@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Header from '@/components/Header'
-import { Plus, FileBarChart2, CheckCircle2, XCircle, AlertTriangle, Clock, Bug, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, FileBarChart2, CheckCircle2, XCircle, AlertTriangle, Clock, Bug, ChevronDown, ChevronUp, Copy, Download, Share2, Mail, Send, MoreHorizontal } from 'lucide-react'
 import { supabase, type TestReport, type Project } from '@/lib/supabase'
 import { cn, formatDate, getProjectGradient } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -27,6 +27,7 @@ function ReportsContent() {
   const [showModal, setShowModal] = useState(false)
   const [filterProject, setFilterProject] = useState(preProject)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [shareMenuId, setShareMenuId] = useState<string | null>(null)
   const [form, setForm] = useState({ ...emptyForm, project_id: preProject })
   const [saving, setSaving] = useState(false)
 
@@ -64,6 +65,54 @@ function ReportsContent() {
   }
 
   const filtered = reports.filter(r => !filterProject || r.project_id === filterProject)
+
+  function getReportText(r: typeof reports[0]) {
+    const passRate = r.total_cases > 0 ? Math.round((r.passed / r.total_cases) * 100) : 0
+    return [
+      `📊 Test Report: ${r.title}`,
+      `Project: ${r.project_name ?? 'N/A'}  |  Date: ${formatDate(r.test_date)}  |  Env: ${r.environment}`,
+      `Results: ✅ ${r.passed} passed  ❌ ${r.failed} failed  🚫 ${r.blocked} blocked  ⏭ ${r.skipped} skipped`,
+      `Pass Rate: ${passRate}%  |  Bugs Found: ${r.bugs_found}`,
+      r.summary ? `\nSummary:\n${r.summary}` : '',
+      r.notes ? `\nNotes:\n${r.notes}` : '',
+    ].filter(Boolean).join('\n')
+  }
+
+  function quickCopy(r: typeof reports[0]) {
+    navigator.clipboard.writeText(getReportText(r)).then(() => toast.success('Copied to clipboard!'))
+  }
+
+  function downloadPDF(r: typeof reports[0]) {
+    const passRate = r.total_cases > 0 ? Math.round((r.passed / r.total_cases) * 100) : 0
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${r.title}</title>
+<style>body{font-family:system-ui,sans-serif;max-width:800px;margin:40px auto;padding:0 24px;color:#1e293b}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.meta{color:#64748b;font-size:13px;margin-bottom:24px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center}
+.stat-val{font-size:24px;font-weight:700}.stat-label{font-size:11px;color:#94a3b8;text-transform:uppercase}
+.pass{color:#10b981}.fail{color:#ef4444}.block{color:#8b5cf6}.skip{color:#94a3b8}.bug{color:#ec4899}
+.rate{background:#f0fdf4;border:1px solid #bbf7d0;padding:10px 16px;border-radius:8px;margin-bottom:24px;font-weight:600;color:#166534}
+section{margin-bottom:20px}h2{font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;margin-bottom:6px}
+p{font-size:14px;line-height:1.6;white-space:pre-wrap}
+</style></head><body>
+<h1>${r.title}</h1>
+<div class="meta">${r.project_name ?? ''} &nbsp;·&nbsp; ${formatDate(r.test_date)} &nbsp;·&nbsp; ${r.environment}</div>
+<div class="stats">
+  <div class="stat"><div class="stat-val pass">${r.passed}</div><div class="stat-label">Passed</div></div>
+  <div class="stat"><div class="stat-val fail">${r.failed}</div><div class="stat-label">Failed</div></div>
+  <div class="stat"><div class="stat-val block">${r.blocked}</div><div class="stat-label">Blocked</div></div>
+  <div class="stat"><div class="stat-val skip">${r.skipped}</div><div class="stat-label">Skipped</div></div>
+</div>
+<div class="rate">Pass Rate: ${passRate}% &nbsp;&nbsp; Bugs Found: ${r.bugs_found}</div>
+${r.summary ? `<section><h2>Summary</h2><p>${r.summary}</p></section>` : ''}
+${r.notes ? `<section><h2>Notes</h2><p>${r.notes}</p></section>` : ''}
+<script>window.onload=()=>window.print()</script>
+</body></html>`
+    const blob = new Blob([html], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+  }
 
   function PassBar({ passed, failed, blocked, skipped }: { passed: number, failed: number, blocked: number, skipped: number }) {
     const total = passed + failed + blocked + skipped || 1
@@ -180,6 +229,60 @@ function ReportsContent() {
                         <p className="text-sm text-slate-400 whitespace-pre-wrap">{r.notes}</p>
                       </div>
                     )}
+
+                    {/* Action bar */}
+                    <div className="flex items-center gap-2 pt-2 flex-wrap border-t border-white/[0.05]">
+                      <button
+                        onClick={() => quickCopy(r)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                      >
+                        <Copy size={12} /> Quick Copy
+                      </button>
+                      <button
+                        onClick={() => downloadPDF(r)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors"
+                      >
+                        <Download size={12} /> Download PDF
+                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={() => setShareMenuId(shareMenuId === r.id ? null : r.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
+                        >
+                          <Share2 size={12} /> Share
+                        </button>
+                        {shareMenuId === r.id && (
+                          <div className="absolute bottom-full mb-2 left-0 glass-card p-2 z-20 flex flex-col gap-1 min-w-[160px] shadow-xl">
+                            <a
+                              href={`mailto:?subject=${encodeURIComponent(r.title)}&body=${encodeURIComponent(getReportText(r))}`}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:bg-white/[0.06] transition-colors"
+                            >
+                              <Mail size={12} className="text-red-400" /> Email
+                            </a>
+                            <a
+                              href={`https://t.me/share/url?url=&text=${encodeURIComponent(getReportText(r))}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:bg-white/[0.06] transition-colors"
+                            >
+                              <Send size={12} className="text-sky-400" /> Telegram
+                            </a>
+                            <a
+                              href={`https://teams.microsoft.com/share?href=${encodeURIComponent(window.location.href)}&msgText=${encodeURIComponent(getReportText(r))}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:bg-white/[0.06] transition-colors"
+                            >
+                              <MoreHorizontal size={12} className="text-blue-400" /> Teams
+                            </a>
+                            <button
+                              onClick={() => { if (navigator.share) navigator.share({ title: r.title, text: getReportText(r) }); else quickCopy(r) }}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:bg-white/[0.06] transition-colors text-left"
+                            >
+                              <Share2 size={12} className="text-violet-400" /> Other
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
