@@ -10,6 +10,11 @@ import {
   RefreshCw, CheckSquare, X, Briefcase, Building2, StickyNote,
   Droplets, Wind, Thermometer, Sun, CloudRain, MapPin
 } from 'lucide-react'
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip as RcTooltip,
+  ResponsiveContainer, RadialBarChart, RadialBar,
+  ComposedChart, Bar
+} from 'recharts'
 import { supabase, type Project } from '@/lib/supabase'
 import { getProjectGradient, cn } from '@/lib/utils'
 import Link from 'next/link'
@@ -176,6 +181,12 @@ function NewsCard({ article, index }: { article: NewsArticle; index: number }) {
 }
 
 // ── Weather helpers ───────────────────────────────────────────
+interface HourlyEntry {
+  h: number; label: string
+  temp: number; feelsLike: number; code: number
+  precipProb: number; windSpeed: number
+}
+
 interface WeatherCurrent {
   temperature: number; feelsLike: number; humidity: number
   windSpeed: number; uvIndex: number; precipitation: number
@@ -222,7 +233,8 @@ export default function Dashboard() {
   const [upcomingCalItems, setUpcomingCalItems] = useState<
     Array<{ dateKey: string; notes: Array<{ text: string; color: string }>; events: Array<{ title: string }> }>
   >([])
-  const [weather, setWeather] = useState<WeatherCurrent | null>(null)
+  const [weather, setWeather]           = useState<WeatherCurrent | null>(null)
+  const [todayHourly, setTodayHourly]   = useState<HourlyEntry[]>([])
   const { text: shiftText, pct: shiftPct } = useShiftCountdown()
   const greeting = getGreeting()
 
@@ -344,6 +356,28 @@ export default function Dashboard() {
         todayMax:      todayIdx >= 0 ? Math.round(data.daily.temperature_2m_max[todayIdx]) : 0,
         todayMin:      todayIdx >= 0 ? Math.round(data.daily.temperature_2m_min[todayIdx]) : 0,
       })
+      // Parse today's hourly entries
+      const hTimes: string[]  = data.hourly?.time ?? []
+      const hTemps: number[]  = data.hourly?.temperature_2m ?? []
+      const hFeels: number[]  = data.hourly?.apparent_temperature ?? []
+      const hCodes: number[]  = data.hourly?.weather_code ?? []
+      const hPrecip: number[] = data.hourly?.precipitation_probability ?? []
+      const hWind: number[]   = data.hourly?.wind_speed_10m ?? []
+      const fmt12 = (h: number) => h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`
+      const hourly: HourlyEntry[] = []
+      hTimes.forEach((t, i) => {
+        if (!t.startsWith(todayStr)) return
+        const h = parseInt(t.slice(11, 13))
+        hourly.push({
+          h, label: fmt12(h),
+          temp:      Math.round(hTemps[i] ?? 0),
+          feelsLike: Math.round(hFeels[i] ?? 0),
+          code:      hCodes[i] ?? 0,
+          precipProb: hPrecip[i] ?? 0,
+          windSpeed: Math.round(hWind[i] ?? 0),
+        })
+      })
+      setTodayHourly(hourly)
     } catch { /* silent */ }
   }
 
@@ -521,12 +555,26 @@ export default function Dashboard() {
         {weather && (() => {
           const info   = weatherInfo(weather.weatherCode)
           const uv     = uvLevel(weather.uvIndex)
+
+          // Hourly chart data — 6 AM to 11 PM
+          const chartHourly = todayHourly.filter(h => h.h >= 6)
+          const maxRainProb  = chartHourly.length ? Math.max(...chartHourly.map(h => h.precipProb)) : 0
+
+          // Radial donut data (all values 0-100 normalised)
+          const radialData = [
+            { name: 'Rain %',  value: maxRainProb,                                                         actual: `${maxRainProb}%`,              fill: '#38bdf8' },
+            { name: 'UV',      value: Math.min(Math.round(weather.uvIndex / 12 * 100), 100),               actual: `${weather.uvIndex} (${uv.label})`, fill: '#c084fc' },
+            { name: 'Humidity',value: weather.humidity,                                                    actual: `${weather.humidity}%`,         fill: '#34d399' },
+            { name: 'Temp',    value: Math.min(Math.max(Math.round((weather.temperature - 15) / 30 * 100), 0), 100), actual: `${weather.temperature}°C`, fill: '#fb923c' },
+          ]
+
           return (
             <div className="card overflow-hidden">
               <div className={`h-1.5 bg-gradient-to-r ${info.bg}`} />
-              <div className="p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+              <div className="p-5 space-y-5">
 
+                {/* ── Top row: current conditions + metric tiles ── */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-5">
                   {/* Left: big temp + condition */}
                   <div className="flex items-center gap-4 flex-shrink-0">
                     <span className="text-5xl leading-none">{info.emoji}</span>
@@ -542,11 +590,8 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Divider */}
                   <div className="hidden sm:block w-px h-16 bg-slate-200/40 dark:bg-white/[0.08] flex-shrink-0" />
-
-                  {/* Right: detail grid */}
+                  {/* Metric tiles */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 flex-1">
                     <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/[0.06]">
                       <Thermometer size={14} className="text-orange-400" />
@@ -580,6 +625,91 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
+
+                {/* ── Bottom row: hourly chart + round radial chart ── */}
+                {chartHourly.length > 0 && (
+                  <div className="border-t border-slate-200/40 dark:border-white/[0.06] pt-4 flex flex-col lg:flex-row gap-6 items-start">
+
+                    {/* Hourly temperature + rain chart */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
+                        Today&apos;s Hourly Forecast · Kolkata
+                      </p>
+                      <ResponsiveContainer width="100%" height={110}>
+                        <ComposedChart data={chartHourly} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                          <defs>
+                            <linearGradient id="dbTempGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%"  stopColor="#f97316" stopOpacity={0.55} />
+                              <stop offset="95%" stopColor="#f97316" stopOpacity={0.02} />
+                            </linearGradient>
+                            <linearGradient id="dbRainGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%"  stopColor="#38bdf8" stopOpacity={0.45} />
+                              <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.02} />
+                            </linearGradient>
+                          </defs>
+                          <XAxis
+                            dataKey="label"
+                            tick={{ fontSize: 9, fill: '#64748b' }}
+                            tickLine={false} axisLine={false}
+                            interval={2}
+                          />
+                          <YAxis yAxisId="t" hide domain={['auto', 'auto']} />
+                          <YAxis yAxisId="r" orientation="right" hide domain={[0, 100]} />
+                          <RcTooltip
+                            contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 11 }}
+                            labelStyle={{ color: '#94a3b8', marginBottom: 2 }}
+                            itemStyle={{ color: '#e2e8f0' }}
+                            formatter={(v: number, name: string) =>
+                              name === 'temp' ? [`${v}°C`, 'Temp'] : [`${v}%`, 'Rain Prob']
+                            }
+                          />
+                          <Area yAxisId="t" type="monotone" dataKey="temp"      stroke="#f97316" strokeWidth={2} fill="url(#dbTempGrad)" dot={false} activeDot={{ r: 3, fill: '#f97316' }} />
+                          <Area yAxisId="r" type="monotone" dataKey="precipProb" stroke="#38bdf8" strokeWidth={1.5} fill="url(#dbRainGrad)" dot={false} activeDot={{ r: 3, fill: '#38bdf8' }} />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                      {/* Legend */}
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                          <span className="w-3 h-0.5 rounded bg-orange-400 inline-block" /> Temperature
+                        </span>
+                        <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                          <span className="w-3 h-0.5 rounded bg-sky-400 inline-block" /> Rain Probability
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Round radial chart */}
+                    <div className="flex-shrink-0 flex flex-col items-center">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Weather Index</p>
+                      <RadialBarChart
+                        width={180} height={180}
+                        cx="50%" cy="50%"
+                        innerRadius="28%" outerRadius="95%"
+                        startAngle={90} endAngle={-270}
+                        data={radialData}
+                      >
+                        <RadialBar dataKey="value" cornerRadius={5} background={{ fill: 'rgba(148,163,184,0.08)' }} />
+                        <RcTooltip
+                          contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 11 }}
+                          labelStyle={{ color: '#94a3b8' }}
+                          formatter={(_: number, __: string, props: { payload?: { name: string; actual: string } }) =>
+                            [props.payload?.actual ?? '', props.payload?.name ?? '']
+                          }
+                        />
+                      </RadialBarChart>
+                      {/* Legend dots */}
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1">
+                        {radialData.map(d => (
+                          <span key={d.name} className="flex items-center gap-1 text-[9px] text-slate-500">
+                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: d.fill }} />
+                            {d.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+                )}
               </div>
             </div>
           )

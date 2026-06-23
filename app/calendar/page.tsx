@@ -7,6 +7,9 @@ import {
   AlertCircle, Plus, CheckSquare, X, Phone, Briefcase, Home,
   Building2, StickyNote, Trash2, ExternalLink, Pencil, Camera, Loader2
 } from 'lucide-react'
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip as RcTooltip, ResponsiveContainer
+} from 'recharts'
 import { cn } from '@/lib/utils'
 import {
   format, addDays, startOfMonth, endOfMonth,
@@ -68,6 +71,13 @@ type WeatherDay = {
 }
 type WeatherMap = Record<string, WeatherDay>
 
+type HourlyEntry = {
+  h: number; label: string
+  temp: number; feelsLike: number; code: number
+  precipProb: number; windSpeed: number
+}
+type HourlyByDate = Record<string, HourlyEntry[]>
+
 function calWeatherEmoji(code: number): string {
   if (code === 0)  return '☀️'
   if (code <= 2)   return '🌤️'
@@ -126,6 +136,7 @@ export default function CalendarPage() {
   const [selectedDay, setSelectedDay]   = useState(new Date())
   const [googleConnected]               = useState(false)
   const [weatherMap, setWeatherMap]     = useState<WeatherMap>({})
+  const [hourlyByDate, setHourlyByDate] = useState<HourlyByDate>({})
 
   const calendarRef                     = useRef<HTMLDivElement>(null)
   const dayDetailRef                    = useRef<HTMLDivElement>(null)
@@ -200,25 +211,52 @@ export default function CalendarPage() {
         const res = await fetch('/api/weather')
         if (!res.ok) return
         const data = await res.json()
-        const times: string[]   = data.daily?.time ?? []
-        const codes: number[]   = data.daily?.weather_code ?? []
-        const maxT: number[]    = data.daily?.temperature_2m_max ?? []
-        const minT: number[]    = data.daily?.temperature_2m_min ?? []
-        const precip: number[]  = data.daily?.precipitation_sum ?? []
-        const uv: number[]      = data.daily?.uv_index_max ?? []
-        const wind: number[]    = data.daily?.wind_speed_10m_max ?? []
-        const map: WeatherMap = {}
-        times.forEach((dateStr, i) => {
-          map[dateStr] = {
-            weatherCode:      codes[i] ?? 0,
-            maxTemp:          Math.round(maxT[i] ?? 0),
-            minTemp:          Math.round(minT[i] ?? 0),
-            precipitationSum: Math.round((precip[i] ?? 0) * 10) / 10,
-            uvIndexMax:       Math.round(uv[i] ?? 0),
-            windSpeedMax:     Math.round(wind[i] ?? 0),
+
+        // ── daily map ──
+        const dTimes: string[]   = data.daily?.time ?? []
+        const dCodes: number[]   = data.daily?.weather_code ?? []
+        const dMaxT: number[]    = data.daily?.temperature_2m_max ?? []
+        const dMinT: number[]    = data.daily?.temperature_2m_min ?? []
+        const dPrecip: number[]  = data.daily?.precipitation_sum ?? []
+        const dUV: number[]      = data.daily?.uv_index_max ?? []
+        const dWind: number[]    = data.daily?.wind_speed_10m_max ?? []
+        const dMap: WeatherMap = {}
+        dTimes.forEach((dateStr, i) => {
+          dMap[dateStr] = {
+            weatherCode:      dCodes[i] ?? 0,
+            maxTemp:          Math.round(dMaxT[i] ?? 0),
+            minTemp:          Math.round(dMinT[i] ?? 0),
+            precipitationSum: Math.round((dPrecip[i] ?? 0) * 10) / 10,
+            uvIndexMax:       Math.round(dUV[i] ?? 0),
+            windSpeedMax:     Math.round(dWind[i] ?? 0),
           }
         })
-        setWeatherMap(map)
+        setWeatherMap(dMap)
+
+        // ── hourly map ──
+        const hTimes: string[]  = data.hourly?.time ?? []
+        const hTemps: number[]  = data.hourly?.temperature_2m ?? []
+        const hFeels: number[]  = data.hourly?.apparent_temperature ?? []
+        const hCodes: number[]  = data.hourly?.weather_code ?? []
+        const hPrecip: number[] = data.hourly?.precipitation_probability ?? []
+        const hWind: number[]   = data.hourly?.wind_speed_10m ?? []
+        const fmt12 = (h: number) =>
+          h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`
+        const hMap: HourlyByDate = {}
+        hTimes.forEach((t, i) => {
+          const dateKey = t.slice(0, 10)
+          const h = parseInt(t.slice(11, 13))
+          if (!hMap[dateKey]) hMap[dateKey] = []
+          hMap[dateKey].push({
+            h, label: fmt12(h),
+            temp:      Math.round(hTemps[i] ?? 0),
+            feelsLike: Math.round(hFeels[i] ?? 0),
+            code:      hCodes[i] ?? 0,
+            precipProb: hPrecip[i] ?? 0,
+            windSpeed: Math.round(hWind[i] ?? 0),
+          })
+        })
+        setHourlyByDate(hMap)
       } catch { /* silent */ }
     }
     fetchWeather()
@@ -1245,7 +1283,8 @@ export default function CalendarPage() {
 
               {/* ── View weather details ── */}
               {modalView === 'view-weather' && (() => {
-                const wd = weatherMap[viewingWeatherDateKey]
+                const wd      = weatherMap[viewingWeatherDateKey]
+                const hourly  = (hourlyByDate[viewingWeatherDateKey] ?? []).filter(h => h.h >= 6)
                 if (!wd) return (
                   <div className="py-6 text-center">
                     <p className="text-sm text-slate-400">No forecast data available for this date.</p>
@@ -1257,9 +1296,10 @@ export default function CalendarPage() {
                 const emoji = calWeatherEmoji(wd.weatherCode)
                 const uv    = calUvLevel(wd.uvIndexMax)
                 return (
-                  <div className="space-y-4">
+                  <div className="space-y-4 max-h-[72vh] overflow-y-auto pr-0.5">
+
                     {/* Hero strip */}
-                    <div className={`rounded-2xl bg-gradient-to-br ${grad} p-5 text-white`}>
+                    <div className={`rounded-2xl bg-gradient-to-br ${grad} p-4 text-white flex-shrink-0`}>
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-4xl font-black leading-none">{wd.maxTemp}°<span className="text-xl font-semibold opacity-70">C</span></p>
@@ -1270,8 +1310,69 @@ export default function CalendarPage() {
                       </div>
                     </div>
 
+                    {/* Hourly temperature chart */}
+                    {hourly.length > 0 && (
+                      <div className="flex-shrink-0">
+                        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-500 uppercase tracking-widest mb-2">
+                          Temperature by Hour
+                        </p>
+                        <ResponsiveContainer width="100%" height={90}>
+                          <AreaChart data={hourly} margin={{ top: 4, right: 2, bottom: 0, left: 2 }}>
+                            <defs>
+                              <linearGradient id="calTempGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%"  stopColor="#f97316" stopOpacity={0.6} />
+                                <stop offset="95%" stopColor="#f97316" stopOpacity={0.02} />
+                              </linearGradient>
+                            </defs>
+                            <XAxis
+                              dataKey="label"
+                              tick={{ fontSize: 8, fill: '#64748b' }}
+                              tickLine={false} axisLine={false}
+                              interval={2}
+                            />
+                            <YAxis hide domain={['auto', 'auto']} />
+                            <RcTooltip
+                              contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 6, fontSize: 11 }}
+                              labelStyle={{ color: '#94a3b8' }}
+                              formatter={(v: number) => [`${v}°C`, 'Temp']}
+                            />
+                            <Area
+                              type="monotone" dataKey="temp"
+                              stroke="#f97316" strokeWidth={2}
+                              fill="url(#calTempGrad)"
+                              dot={false} activeDot={{ r: 3, fill: '#f97316' }}
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {/* Scrollable hourly list */}
+                    {hourly.length > 0 && (
+                      <div className="flex-shrink-0">
+                        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-500 uppercase tracking-widest mb-2">
+                          Hour-by-Hour Breakdown
+                        </p>
+                        <div className="space-y-1 max-h-52 overflow-y-auto rounded-xl border border-slate-200/70 dark:border-white/[0.06] divide-y divide-slate-100 dark:divide-white/[0.04]">
+                          {hourly.map(h => (
+                            <div key={h.h} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/[0.03] transition-colors">
+                              <span className="w-12 text-[10px] font-bold text-slate-500 dark:text-slate-400 flex-shrink-0">{h.label}</span>
+                              <span className="text-base leading-none flex-shrink-0">{calWeatherEmoji(h.code)}</span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400 flex-1 truncate">{calWeatherLabel(h.code)}</span>
+                              <span className="text-sm font-black text-white flex-shrink-0">{h.temp}°</span>
+                              {h.precipProb > 0 && (
+                                <span className="text-[10px] font-semibold text-sky-500 flex-shrink-0 w-10 text-right">
+                                  💧{h.precipProb}%
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Detail tiles */}
-                    <div className="grid grid-cols-2 gap-2.5">
+                    <div className="grid grid-cols-2 gap-2.5 flex-shrink-0">
                       <div className="flex items-center gap-2.5 p-3 rounded-xl bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/20">
                         <span className="text-xl">💧</span>
                         <div>
@@ -1312,7 +1413,7 @@ export default function CalendarPage() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2 pt-1">
+                    <div className="flex gap-2 pt-1 flex-shrink-0">
                       <button onClick={() => setModalView('options')} className="btn-secondary flex-1 justify-center">Back</button>
                       <button onClick={() => setShowModal(false)} className="btn-primary flex-1 justify-center">Done</button>
                     </div>
