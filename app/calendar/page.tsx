@@ -62,7 +62,10 @@ const OPT_BASE  = 'w-full flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 d
 
 const NOTE_COLOR_KEYS: NoteColor[] = ['blue', 'pink', 'amber', 'green', 'purple']
 
-type WeatherDay = { weatherCode: number; maxTemp: number }
+type WeatherDay = {
+  weatherCode: number; maxTemp: number; minTemp: number
+  precipitationSum: number; uvIndexMax: number; windSpeedMax: number
+}
 type WeatherMap = Record<string, WeatherDay>
 
 function calWeatherEmoji(code: number): string {
@@ -76,6 +79,34 @@ function calWeatherEmoji(code: number): string {
   if (code <= 82)  return '🌦️'
   if (code <= 86)  return '🌨️'
   return '⛈️'
+}
+function calWeatherLabel(code: number): string {
+  if (code === 0)  return 'Clear Sky'
+  if (code <= 2)   return 'Partly Cloudy'
+  if (code === 3)  return 'Overcast'
+  if (code <= 48)  return 'Foggy'
+  if (code <= 55)  return 'Drizzle'
+  if (code <= 65)  return 'Rainy'
+  if (code <= 77)  return 'Snowy'
+  if (code <= 82)  return 'Rain Showers'
+  if (code <= 86)  return 'Snow Showers'
+  return 'Thunderstorm'
+}
+function calWeatherGradient(code: number): string {
+  if (code === 0)  return 'from-amber-400 to-orange-500'
+  if (code <= 2)   return 'from-amber-300 to-sky-400'
+  if (code === 3)  return 'from-slate-400 to-slate-500'
+  if (code <= 48)  return 'from-slate-300 to-slate-500'
+  if (code <= 65)  return 'from-sky-400 to-blue-600'
+  if (code <= 82)  return 'from-blue-400 to-indigo-600'
+  return 'from-violet-500 to-slate-700'
+}
+function calUvLevel(uv: number): { label: string; color: string } {
+  if (uv < 3)  return { label: 'Low',       color: 'text-emerald-500 dark:text-emerald-400' }
+  if (uv < 6)  return { label: 'Moderate',  color: 'text-amber-500 dark:text-amber-400' }
+  if (uv < 8)  return { label: 'High',      color: 'text-orange-500 dark:text-orange-400' }
+  if (uv < 11) return { label: 'Very High', color: 'text-red-500 dark:text-red-400' }
+  return        { label: 'Extreme',         color: 'text-rose-600 dark:text-rose-400' }
 }
 
 const MOCK_EVENTS: CalEvent[] = []
@@ -124,10 +155,11 @@ export default function CalendarPage() {
 
   const [showModal, setShowModal] = useState(false)
   const [modalDate, setModalDate] = useState<Date>(new Date())
-  const [modalView, setModalView] = useState<'options' | 'add-schedule' | 'add-todo' | 'add-note' | 'edit-note' | 'edit-event' | 'view-note' | 'view-event' | 'view-todos'>('options')
+  const [modalView, setModalView] = useState<'options' | 'add-schedule' | 'add-todo' | 'add-note' | 'edit-note' | 'edit-event' | 'view-note' | 'view-event' | 'view-todos' | 'view-weather'>('options')
 
-  const [viewingNote, setViewingNote]   = useState<DayNote | null>(null)
-  const [viewingEvent, setViewingEvent] = useState<CalEvent | null>(null)
+  const [viewingNote, setViewingNote]         = useState<DayNote | null>(null)
+  const [viewingEvent, setViewingEvent]       = useState<CalEvent | null>(null)
+  const [viewingWeatherDateKey, setViewingWeatherDateKey] = useState('')
 
   const [newTodoText, setNewTodoText]     = useState('')
   const [scheduleTitle, setScheduleTitle] = useState('')
@@ -170,10 +202,21 @@ export default function CalendarPage() {
         const data = await res.json()
         const times: string[]   = data.daily?.time ?? []
         const codes: number[]   = data.daily?.weather_code ?? []
-        const maxTemps: number[] = data.daily?.temperature_2m_max ?? []
+        const maxT: number[]    = data.daily?.temperature_2m_max ?? []
+        const minT: number[]    = data.daily?.temperature_2m_min ?? []
+        const precip: number[]  = data.daily?.precipitation_sum ?? []
+        const uv: number[]      = data.daily?.uv_index_max ?? []
+        const wind: number[]    = data.daily?.wind_speed_10m_max ?? []
         const map: WeatherMap = {}
         times.forEach((dateStr, i) => {
-          map[dateStr] = { weatherCode: codes[i], maxTemp: Math.round(maxTemps[i]) }
+          map[dateStr] = {
+            weatherCode:      codes[i] ?? 0,
+            maxTemp:          Math.round(maxT[i] ?? 0),
+            minTemp:          Math.round(minT[i] ?? 0),
+            precipitationSum: Math.round((precip[i] ?? 0) * 10) / 10,
+            uvIndexMax:       Math.round(uv[i] ?? 0),
+            windSpeedMax:     Math.round(wind[i] ?? 0),
+          }
         })
         setWeatherMap(map)
       } catch { /* silent */ }
@@ -318,6 +361,15 @@ export default function CalendarPage() {
   function deleteEditEvent() {
     saveUserEvents(userEvents.filter(e => e.id !== editEventId))
     setShowModal(false)
+  }
+
+  function openWeatherPopup(e: React.MouseEvent, day: Date) {
+    e.stopPropagation()
+    const key = format(day, 'yyyy-MM-dd')
+    setViewingWeatherDateKey(key)
+    setModalDate(day)
+    setModalView('view-weather')
+    setShowModal(true)
   }
 
   function openViewNote(note: DayNote) {
@@ -580,10 +632,14 @@ export default function CalendarPage() {
                         {format(day, 'd')}
                       </span>
                       {cellWeather && isCurrentMonth && (
-                        <span className="flex items-center gap-0.5 leading-none mt-0.5">
+                        <button
+                          onClick={e => openWeatherPopup(e, day)}
+                          title="View weather details"
+                          className="flex items-center gap-0.5 leading-none mt-0.5 rounded hover:bg-black/[0.06] dark:hover:bg-white/[0.10] px-0.5 transition-colors"
+                        >
                           <span className="text-[10px]">{calWeatherEmoji(cellWeather.weatherCode)}</span>
                           <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400">{cellWeather.maxTemp}°</span>
-                        </span>
+                        </button>
                       )}
                     </div>
                     {statusLabel && (
@@ -851,6 +907,27 @@ export default function CalendarPage() {
               {/* ── Options ── */}
               {modalView === 'options' && (
                 <div className="space-y-2">
+
+                  {/* Weather detail — only when forecast data is available */}
+                  {weatherMap[modalDateKey] && (
+                    <button
+                      onClick={() => { setViewingWeatherDateKey(modalDateKey); setModalView('view-weather') }}
+                      className={cn(OPT_BASE, 'hover:bg-sky-50 hover:border-sky-300 dark:hover:bg-sky-500/15 dark:hover:border-sky-500/40')}
+                    >
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md text-2xl leading-none"
+                           style={{ background: 'linear-gradient(135deg,#38bdf8,#3b82f6)' }}>
+                        {calWeatherEmoji(weatherMap[modalDateKey].weatherCode)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-indigo-900 dark:text-white group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors">
+                          Weather Details
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">
+                          {calWeatherLabel(weatherMap[modalDateKey].weatherCode)} · {weatherMap[modalDateKey].maxTemp}° / {weatherMap[modalDateKey].minTemp}°
+                        </p>
+                      </div>
+                    </button>
+                  )}
 
                   {/* Note / Event */}
                   <button onClick={() => setModalView('add-note')}
@@ -1165,6 +1242,83 @@ export default function CalendarPage() {
                   </div>
                 </div>
               )}
+
+              {/* ── View weather details ── */}
+              {modalView === 'view-weather' && (() => {
+                const wd = weatherMap[viewingWeatherDateKey]
+                if (!wd) return (
+                  <div className="py-6 text-center">
+                    <p className="text-sm text-slate-400">No forecast data available for this date.</p>
+                    <button onClick={() => setModalView('options')} className="btn-secondary mt-4 mx-auto">Back</button>
+                  </div>
+                )
+                const grad  = calWeatherGradient(wd.weatherCode)
+                const label = calWeatherLabel(wd.weatherCode)
+                const emoji = calWeatherEmoji(wd.weatherCode)
+                const uv    = calUvLevel(wd.uvIndexMax)
+                return (
+                  <div className="space-y-4">
+                    {/* Hero strip */}
+                    <div className={`rounded-2xl bg-gradient-to-br ${grad} p-5 text-white`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-4xl font-black leading-none">{wd.maxTemp}°<span className="text-xl font-semibold opacity-70">C</span></p>
+                          <p className="text-sm font-semibold mt-1 opacity-90">{label}</p>
+                          <p className="text-xs opacity-60 mt-0.5">Low {wd.minTemp}°C · Kolkata</p>
+                        </div>
+                        <span className="text-6xl leading-none">{emoji}</span>
+                      </div>
+                    </div>
+
+                    {/* Detail tiles */}
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="flex items-center gap-2.5 p-3 rounded-xl bg-sky-50 dark:bg-sky-500/10 border border-sky-200/70 dark:border-sky-500/20">
+                        <span className="text-xl">💧</span>
+                        <div>
+                          <p className="text-sm font-black text-sky-900 dark:text-sky-200">{wd.precipitationSum} mm</p>
+                          <p className="text-[10px] font-semibold text-sky-500 uppercase tracking-wide">Precipitation</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2.5 p-3 rounded-xl bg-teal-50 dark:bg-teal-500/10 border border-teal-200/70 dark:border-teal-500/20">
+                        <span className="text-xl">🌬️</span>
+                        <div>
+                          <p className="text-sm font-black text-teal-900 dark:text-teal-200">{wd.windSpeedMax} km/h</p>
+                          <p className="text-[10px] font-semibold text-teal-500 uppercase tracking-wide">Max Wind</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/70 dark:border-amber-500/20 col-span-2">
+                        <span className="text-xl">☀️</span>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-black text-amber-900 dark:text-amber-200">UV Index {wd.uvIndexMax}</p>
+                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border
+                              ${wd.uvIndexMax < 3  ? 'bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40'
+                              : wd.uvIndexMax < 6  ? 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40'
+                              : wd.uvIndexMax < 8  ? 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-500/40'
+                              : wd.uvIndexMax < 11 ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/40'
+                              :                     'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40'
+                              }`}>{uv.label}</span>
+                          </div>
+                          <div className="mt-2 h-2 rounded-full overflow-hidden bg-gradient-to-r from-emerald-400 via-amber-400 via-orange-500 to-rose-600">
+                            <div
+                              className="h-full bg-white/30 rounded-full"
+                              style={{ marginLeft: `${Math.min((wd.uvIndexMax / 12) * 100, 100)}%`, width: '4px' }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-[9px] text-slate-400 mt-0.5">
+                            <span>0</span><span>3</span><span>6</span><span>8</span><span>11+</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                      <button onClick={() => setModalView('options')} className="btn-secondary flex-1 justify-center">Back</button>
+                      <button onClick={() => setShowModal(false)} className="btn-primary flex-1 justify-center">Done</button>
+                    </div>
+                  </div>
+                )
+              })()}
 
               {/* ── View & manage todos ── */}
               {modalView === 'view-todos' && (() => {
