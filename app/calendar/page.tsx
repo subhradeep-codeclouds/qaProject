@@ -62,6 +62,22 @@ const OPT_BASE  = 'w-full flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 d
 
 const NOTE_COLOR_KEYS: NoteColor[] = ['blue', 'pink', 'amber', 'green', 'purple']
 
+type WeatherDay = { weatherCode: number; maxTemp: number }
+type WeatherMap = Record<string, WeatherDay>
+
+function calWeatherEmoji(code: number): string {
+  if (code === 0)  return '☀️'
+  if (code <= 2)   return '🌤️'
+  if (code === 3)  return '☁️'
+  if (code <= 48)  return '🌫️'
+  if (code <= 55)  return '🌦️'
+  if (code <= 65)  return '🌧️'
+  if (code <= 77)  return '🌨️'
+  if (code <= 82)  return '🌦️'
+  if (code <= 86)  return '🌨️'
+  return '⛈️'
+}
+
 const MOCK_EVENTS: CalEvent[] = []
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -78,6 +94,7 @@ export default function CalendarPage() {
   const [notes, setNotes]               = useState<DayNote[]>([])
   const [selectedDay, setSelectedDay]   = useState(new Date())
   const [googleConnected]               = useState(false)
+  const [weatherMap, setWeatherMap]     = useState<WeatherMap>({})
 
   const calendarRef                     = useRef<HTMLDivElement>(null)
   const dayDetailRef                    = useRef<HTMLDivElement>(null)
@@ -145,7 +162,25 @@ export default function CalendarPage() {
     if (localEvents.length)              setUserEvents(localEvents)
     if (localNotes.length)               setNotes(localNotes)
 
-    // Step 2: fetch from API for cross-device sync — only override when API has real data
+    // Step 2: fetch Kolkata weather forecast
+    async function fetchWeather() {
+      try {
+        const res = await fetch('/api/weather')
+        if (!res.ok) return
+        const data = await res.json()
+        const times: string[]   = data.daily?.time ?? []
+        const codes: number[]   = data.daily?.weather_code ?? []
+        const maxTemps: number[] = data.daily?.temperature_2m_max ?? []
+        const map: WeatherMap = {}
+        times.forEach((dateStr, i) => {
+          map[dateStr] = { weatherCode: codes[i], maxTemp: Math.round(maxTemps[i]) }
+        })
+        setWeatherMap(map)
+      } catch { /* silent */ }
+    }
+    fetchWeather()
+
+    // Step 3: fetch from API for cross-device sync — only override when API has real data
     async function syncFromApi() {
       try {
         const res = await fetch('/api/calendar/data')
@@ -487,6 +522,8 @@ export default function CalendarPage() {
               }
 
               // Build chip list for this cell
+              const cellWeather = weatherMap[dateKey]
+
               const cellNotes  = notes.filter(n => n.date === dateKey)
               const cellEvents = allEvents.filter(e => isSameDay(new Date(e.start), day))
               const todoCnt    = todos.filter(t => t.date === dateKey).length
@@ -542,6 +579,12 @@ export default function CalendarPage() {
                       )}>
                         {format(day, 'd')}
                       </span>
+                      {cellWeather && isCurrentMonth && (
+                        <span className="flex items-center gap-0.5 leading-none mt-0.5">
+                          <span className="text-[10px]">{calWeatherEmoji(cellWeather.weatherCode)}</span>
+                          <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400">{cellWeather.maxTemp}°</span>
+                        </span>
+                      )}
                     </div>
                     {statusLabel && (
                       statusIsPill ? (

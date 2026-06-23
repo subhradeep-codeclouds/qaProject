@@ -7,7 +7,8 @@ import {
   Calendar, MessageSquare, Plus, ArrowRight,
   Newspaper, ExternalLink,
   ChevronRight, ChevronDown, ChevronUp, Clock,
-  RefreshCw, CheckSquare, X, Briefcase, Building2, StickyNote
+  RefreshCw, CheckSquare, X, Briefcase, Building2, StickyNote,
+  Droplets, Wind, Thermometer, Sun, CloudRain, MapPin
 } from 'lucide-react'
 import { supabase, type Project } from '@/lib/supabase'
 import { getProjectGradient, cn } from '@/lib/utils'
@@ -174,6 +175,34 @@ function NewsCard({ article, index }: { article: NewsArticle; index: number }) {
   )
 }
 
+// ── Weather helpers ───────────────────────────────────────────
+interface WeatherCurrent {
+  temperature: number; feelsLike: number; humidity: number
+  windSpeed: number; uvIndex: number; precipitation: number
+  weatherCode: number; todayMax: number; todayMin: number
+}
+
+function weatherInfo(code: number): { emoji: string; label: string; bg: string; text: string } {
+  if (code === 0)  return { emoji: '☀️',  label: 'Clear Sky',      bg: 'from-amber-400 to-orange-500',   text: 'text-amber-600 dark:text-amber-300' }
+  if (code <= 2)   return { emoji: '🌤️', label: 'Partly Cloudy',  bg: 'from-amber-300 to-sky-400',      text: 'text-amber-500 dark:text-amber-300' }
+  if (code === 3)  return { emoji: '☁️',  label: 'Overcast',       bg: 'from-slate-400 to-slate-500',    text: 'text-slate-500 dark:text-slate-300' }
+  if (code <= 48)  return { emoji: '🌫️', label: 'Foggy',          bg: 'from-slate-300 to-slate-400',    text: 'text-slate-500 dark:text-slate-300' }
+  if (code <= 55)  return { emoji: '🌦️', label: 'Drizzle',        bg: 'from-sky-400 to-blue-500',       text: 'text-sky-600 dark:text-sky-300' }
+  if (code <= 65)  return { emoji: '🌧️', label: 'Rainy',          bg: 'from-blue-500 to-indigo-600',    text: 'text-blue-600 dark:text-blue-300' }
+  if (code <= 77)  return { emoji: '🌨️', label: 'Snowy',          bg: 'from-sky-200 to-blue-300',       text: 'text-sky-500 dark:text-sky-300' }
+  if (code <= 82)  return { emoji: '🌦️', label: 'Rain Showers',   bg: 'from-blue-400 to-indigo-500',    text: 'text-blue-500 dark:text-blue-300' }
+  if (code <= 86)  return { emoji: '🌨️', label: 'Snow Showers',   bg: 'from-sky-200 to-blue-200',       text: 'text-sky-400 dark:text-sky-300' }
+  return            { emoji: '⛈️',  label: 'Thunderstorm',   bg: 'from-violet-600 to-slate-700',   text: 'text-violet-600 dark:text-violet-300' }
+}
+
+function uvLevel(uv: number): { label: string; color: string } {
+  if (uv < 3)  return { label: 'Low',       color: 'text-emerald-500' }
+  if (uv < 6)  return { label: 'Moderate',  color: 'text-amber-500' }
+  if (uv < 8)  return { label: 'High',      color: 'text-orange-500' }
+  if (uv < 11) return { label: 'Very High', color: 'text-red-500' }
+  return        { label: 'Extreme',  color: 'text-rose-600' }
+}
+
 // ── Main Dashboard ────────────────────────────────────────────
 export default function Dashboard() {
   const { dark } = useTheme()
@@ -193,6 +222,7 @@ export default function Dashboard() {
   const [upcomingCalItems, setUpcomingCalItems] = useState<
     Array<{ dateKey: string; notes: Array<{ text: string; color: string }>; events: Array<{ title: string }> }>
   >([])
+  const [weather, setWeather] = useState<WeatherCurrent | null>(null)
   const { text: shiftText, pct: shiftPct } = useShiftCountdown()
   const greeting = getGreeting()
 
@@ -202,6 +232,7 @@ export default function Dashboard() {
   useEffect(() => {
     fetchDashboardData()
     fetchNews()
+    fetchWeather()
     const stored = localStorage.getItem('qa_portal_todos')
     if (stored) {
       try { setTodos(JSON.parse(stored)) } catch { /* ignore */ }
@@ -293,6 +324,27 @@ export default function Dashboard() {
       setNews(data.articles ?? [])
     } catch { /* silent */ }
     setNewsLoading(false)
+  }
+
+  async function fetchWeather() {
+    try {
+      const res = await fetch('/api/weather')
+      if (!res.ok) return
+      const data = await res.json()
+      const todayStr = format(new Date(), 'yyyy-MM-dd')
+      const todayIdx = (data.daily?.time as string[])?.indexOf(todayStr) ?? -1
+      setWeather({
+        temperature:   Math.round(data.current?.temperature_2m ?? 0),
+        feelsLike:     Math.round(data.current?.apparent_temperature ?? 0),
+        humidity:      Math.round(data.current?.relative_humidity_2m ?? 0),
+        windSpeed:     Math.round(data.current?.wind_speed_10m ?? 0),
+        uvIndex:       Math.round(data.current?.uv_index ?? 0),
+        precipitation: data.current?.precipitation ?? 0,
+        weatherCode:   data.current?.weather_code ?? 0,
+        todayMax:      todayIdx >= 0 ? Math.round(data.daily.temperature_2m_max[todayIdx]) : 0,
+        todayMin:      todayIdx >= 0 ? Math.round(data.daily.temperature_2m_min[todayIdx]) : 0,
+      })
+    } catch { /* silent */ }
   }
 
   const visibleNews = newsExpanded ? news : news.slice(0, 3)
@@ -464,6 +516,74 @@ export default function Dashboard() {
             from="from-pink-500" to="to-rose-600"
             icon={<Bug size={20} />} />
         </div>
+
+        {/* ── Kolkata Weather ── */}
+        {weather && (() => {
+          const info   = weatherInfo(weather.weatherCode)
+          const uv     = uvLevel(weather.uvIndex)
+          return (
+            <div className="card overflow-hidden">
+              <div className={`h-1.5 bg-gradient-to-r ${info.bg}`} />
+              <div className="p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+
+                  {/* Left: big temp + condition */}
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <span className="text-5xl leading-none">{info.emoji}</span>
+                    <div>
+                      <div className="flex items-end gap-1">
+                        <span className="text-5xl font-black text-white leading-none">{weather.temperature}</span>
+                        <span className="text-2xl font-bold text-slate-400 mb-1">°C</span>
+                      </div>
+                      <p className={`text-sm font-bold mt-0.5 ${info.text}`}>{info.label}</p>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <MapPin size={10} className="text-slate-500" />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Kolkata, India</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="hidden sm:block w-px h-16 bg-slate-200/40 dark:bg-white/[0.08] flex-shrink-0" />
+
+                  {/* Right: detail grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 flex-1">
+                    <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/[0.06]">
+                      <Thermometer size={14} className="text-orange-400" />
+                      <span className="text-sm font-black text-white">{weather.feelsLike}°</span>
+                      <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Feels Like</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/[0.06]">
+                      <Droplets size={14} className="text-sky-400" />
+                      <span className="text-sm font-black text-white">{weather.humidity}%</span>
+                      <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Humidity</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/[0.06]">
+                      <Wind size={14} className="text-teal-400" />
+                      <span className="text-sm font-black text-white">{weather.windSpeed}</span>
+                      <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">km/h Wind</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/[0.06]">
+                      <Sun size={14} className={uv.color} />
+                      <span className="text-sm font-black text-white">{weather.uvIndex}</span>
+                      <span className={`text-[9px] font-semibold uppercase tracking-wide ${uv.color}`}>{uv.label} UV</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/[0.06]">
+                      <CloudRain size={14} className="text-blue-400" />
+                      <span className="text-sm font-black text-white">{weather.precipitation}mm</span>
+                      <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Rain</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/[0.06]">
+                      <Thermometer size={14} className="text-violet-400" />
+                      <span className="text-sm font-black text-white">{weather.todayMax}° / {weather.todayMin}°</span>
+                      <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-wide">Hi / Lo</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── Main Grid: Projects + Side panel ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
